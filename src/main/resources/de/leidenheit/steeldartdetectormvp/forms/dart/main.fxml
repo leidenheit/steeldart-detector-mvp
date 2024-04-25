@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="960.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.SceneDartSetupController">
+    <children>
+        <VBox prefHeight="960.0" prefWidth="1280.0">
+            <children>
+                <SplitPane centerShape="false" dividerPositions="0.09435933147632312" orientation="VERTICAL" prefHeight="1205.0" prefWidth="1280.0">
+                    <items>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="157.0" prefWidth="1278.0" style="-fx-background-color: #8faec3;">
+                            <children>
+                                <VBox prefHeight="75.33333333333333" prefWidth="1278.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                    <children>
+                                        <Label fx:id="labelStepTitle" text="Step Title">
+                                            <font>
+                                                <Font size="18.0" />
+                                            </font>
+                                            <VBox.margin>
+                                                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                            </VBox.margin>
+                                        </Label>
+                                        <Label fx:id="labelStepDescription" prefHeight="45.0" prefWidth="1262.0" text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet." wrapText="true">
+                                            <VBox.margin>
+                                                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                            </VBox.margin>
+                                        </Label>
+                                    </children>
+                                </VBox>
+                            </children></AnchorPane>
+                        <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #c3a48f;">
+                            <children>
+                                <Label alignment="CENTER" text="Step Content Dynamic" />
+                            </children>
+                        </StackPane>
+                    </items>
+                </SplitPane>
+                <AnchorPane prefHeight="131.0" prefWidth="1280.0">
+                    <children>
+                        <HBox alignment="CENTER_RIGHT" prefHeight="125.0" prefWidth="1280.0" style="-fx-background-color: #8faec3;">
+                            <children>
+                                <Button fx:id="buttonDiscard" mnemonicParsing="false" onAction="#discardAndQuit" prefHeight="24.0" prefWidth="212.0" text="Discard">
+                                    <HBox.margin>
+                                        <Insets bottom="8.0" left="8.0" right="700.0" top="8.0" />
+                                    </HBox.margin>
+                                </Button>
+                                <Button fx:id="buttonPrevious" mnemonicParsing="false" onAction="#previous" prefHeight="24.0" prefWidth="169.0" text="&lt; Previous">
+                                    <HBox.margin>
+                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                    </HBox.margin></Button>
+                                <Button fx:id="buttonNext" mnemonicParsing="false" onAction="#next" prefHeight="24.0" prefWidth="140.0" text="Next &gt;">
+                                    <HBox.margin>
+                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                    </HBox.margin></Button>
+                            </children>
+                        </HBox>
+                    </children>
+                </AnchorPane>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.home.CameraSelectionController">
+    <SplitPane centerShape="false" dividerPositions="0.16666666666666666" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <items>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="255.0" prefWidth="1261.0">
+                <children>
+                    <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <children>
+                            <VBox prefHeight="261.0" prefWidth="1274.0">
+                                <children>
+                                    <Button fx:id="buttonTakeImage" alignment="CENTER" mnemonicParsing="false" text="Take Image">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" right="8.0" top="8.0" />
+                                        </VBox.margin>
+                                    </Button>
+                                    <ComboBox fx:id="comboBoxCam" minWidth="400" promptText="Select Camera">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" right="8.0" top="8.0" />
+                                        </VBox.margin>
+                                    </ComboBox>
+                                </children>
+                            </VBox>
+                        </children>
+                    </HBox>
+                </children>
+            </AnchorPane>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="523.0" prefWidth="1261.0">
+                <children>
+                    <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="672.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <children>
+                            <VBox prefHeight="160.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <children>
+                                    <Label fx:id="labelFeed" text="Feed">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </VBox.margin>
+                                    </Label>
+                                    <ImageView fx:id="imageView" fitHeight="440.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </VBox.margin>
+                                        <viewport>
+                                            <Rectangle2D />
+                                        </viewport>
+                                    </ImageView>
+                                </children>
+                            </VBox>
+                        </children>
+                    </AnchorPane>
+                </children>
+            </AnchorPane>
+        </items>
+    </SplitPane>
+</AnchorPane>

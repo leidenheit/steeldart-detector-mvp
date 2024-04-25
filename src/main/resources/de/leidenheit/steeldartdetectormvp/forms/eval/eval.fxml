@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.eval.EvaluationController">
+    <SplitPane centerShape="false" dividerPositions="0.30376344086021506" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="274.0" prefWidth="1261.0">
+            <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <VBox prefHeight="223.0" prefWidth="2258.0">
+                    <TextArea fx:id="textAreaLog" editable="false" prefHeight="200.0" prefWidth="1170.0" promptText="Log">
+                        <VBox.margin>
+                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                        </VBox.margin>
+                    </TextArea>
+                </VBox>
+                <VBox prefHeight="261.0" prefWidth="1274.0">
+                    <Button fx:id="buttonResetScore" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Reset Params">
+                        <VBox.margin>
+                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                        </VBox.margin>
+                    </Button>
+                    <Button fx:id="buttonTakeImage" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Take Snapshot">
+                        <VBox.margin>
+                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                        </VBox.margin>
+                    </Button>
+                    <Button fx:id="buttonReplay" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Replay Video">
+                        <VBox.margin>
+                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                        </VBox.margin>
+                    </Button>
+                </VBox>
+            </HBox>
+        </AnchorPane>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="523.0" prefWidth="1261.0">
+            <SplitPane orientation="VERTICAL" prefHeight="477.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+                    <HBox prefHeight="235.0" prefWidth="1259.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <VBox prefHeight="475.0" prefWidth="598.0">
+                            <ImageView fx:id="imageView" fitHeight="480.0" fitWidth="640.0" pickOnBounds="true" preserveRatio="true">
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                                <viewport>
+                                    <Rectangle2D />
+                                </viewport>
+                            </ImageView>
+                        </VBox>
+                        <VBox prefHeight="475.0" prefWidth="655.0">
+                            <Label fx:id="labelFeedInfo" text="Information about Frames and FPS">
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                            </Label>
+                            <Label fx:id="labelCameraInfo" text="Information about Camera">
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                            </Label>
+                            <Separator prefWidth="200.0" />
+                            <TextField fx:id="txtScoreFirst" editable="false" promptText="Waiting for Dart">
+                                <font>
+                                    <Font size="64.0" />
+                                </font>
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                            </TextField>
+                            <TextField fx:id="txtScoreSecond" editable="false" promptText="Waiting for Dart">
+                                <font>
+                                    <Font size="64.0" />
+                                </font>
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                            </TextField>
+                            <TextField fx:id="txtScoreThird" editable="false" promptText="Waiting for Dart">
+                                <font>
+                                    <Font size="64.0" />
+                                </font>
+                                <VBox.margin>
+                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                </VBox.margin>
+                            </TextField>
+                        </VBox>
+                    </HBox>
+                </AnchorPane>
+            </SplitPane>
+        </AnchorPane>
+    </SplitPane>
+</AnchorPane>

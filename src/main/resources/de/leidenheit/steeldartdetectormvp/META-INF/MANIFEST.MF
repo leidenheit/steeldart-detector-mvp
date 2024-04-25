@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Main-Class: de.leidenheit.steeldartdetectormvp.SteeldartDetectorApplicat
+ ion
+Class-Path: javafx-media-17.0.6.jar controlsfx-11.1.2.jar ikonli-core-12
+ .3.1.jar formsfx-core-11.6.0.jar javafx-graphics-17.0.6-linux.jar lombo
+ k-1.18.24.jar javafx-controls-17.0.6.jar javafx-graphics-17.0.6.jar val
+ idatorfx-0.4.0.jar javafx-web-17.0.6.jar javafx-base-17.0.6.jar ikonli-
+ javafx-12.3.1.jar javafx-media-17.0.6-linux.jar javafx-fxml-17.0.6-linu
+ x.jar javafx-web-17.0.6-linux.jar javafx-base-17.0.6-linux.jar bootstra
+ pfx-core-0.4.0.jar opencv-4.9.0.jar javafx-controls-17.0.6-linux.jar ja
+ vafx-fxml-17.0.6.jar
+

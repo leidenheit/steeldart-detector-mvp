@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.dartboard.ContentSummaryController">
+   <children>
+      <VBox prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Label text="Please find the configuration and dartboard detection results below:">
+               <VBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </VBox.margin>
+            </Label>
+            <TextArea fx:id="textAreaSummary" editable="false" prefHeight="634.0" prefWidth="1247.0" text="Summary of the configuration and ready to export." wrapText="true">
+               <VBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </VBox.margin>
+               <font>
+                  <Font name="Consolas" size="12.0" />
+               </font>
+            </TextArea>
+            <Separator prefWidth="200.0">
+               <VBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </VBox.margin>
+            </Separator>
+            <Button fx:id="buttonExport" mnemonicParsing="false" text="Export">
+               <VBox.margin>
+                  <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+               </VBox.margin>
+            </Button>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

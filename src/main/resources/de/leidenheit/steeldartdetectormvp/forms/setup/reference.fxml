@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;"
+            xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="de.leidenheit.steeldartdetectormvp.steps.ReferenceController">
+    <children>
+        <SplitPane centerShape="false" dividerPositions="0.31255605381165924" orientation="VERTICAL" prefHeight="746.0"
+                   prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="280.0" prefWidth="1261.0">
+                    <children>
+                        <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0"
+                              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <VBox prefHeight="188.0" prefWidth="1260.6666666666667">
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="bilateral diameter">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderBilateralDiameter" blockIncrement="1.0" majorTickUnit="1.0"
+                                            max="25.0" min="1.0" minorTickCount="1" prefWidth="350.0"
+                                            showTickLabels="true" snapToTicks="true" value="5.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="bilateral sig color:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderBilateralSigColor" blockIncrement="5.0" majorTickUnit="5.0"
+                                            max="250.0" min="5.0" minorTickCount="5" prefWidth="400.0"
+                                            showTickLabels="true" snapToTicks="true" value="175.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="bilateral sig space:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderBilateralSigSpace" blockIncrement="5.0" majorTickUnit="5.0"
+                                            max="250.0" min="5.0" minorTickCount="5" prefWidth="400.0"
+                                            showTickLabels="true" snapToTicks="true" value="175.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                            </VBox>
+                            <VBox prefHeight="261.0" prefWidth="1274.0">
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="canny threshold 1:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderCannyThres1" blockIncrement="20.0" majorTickUnit="100.0"
+                                            max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0"
+                                            showTickLabels="true" snapToTicks="true" value="300.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="canny threshold 2:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderCannyThres2" blockIncrement="20.0" majorTickUnit="100.0"
+                                            max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0"
+                                            showTickLabels="true" snapToTicks="true" value="400.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="min contour area:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderMinContourArea" majorTickUnit="100.0" max="1000.0" min="50.0"
+                                            minorTickCount="50" prefWidth="450.0" showTickLabels="true"
+                                            snapToTicks="true" value="50.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                                <HBox prefHeight="100.0" prefWidth="200.0">
+                                    <Label text="min approx curve rows:">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Label>
+                                    <Slider fx:id="sliderMinApproxCurveRows" blockIncrement="1.0" majorTickUnit="2.0"
+                                            max="32.0" min="6" minorTickCount="1" prefWidth="450.0"
+                                            showTickLabels="true" snapToTicks="true" value="8.0">
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                        </HBox.margin>
+                                    </Slider>
+                                </HBox>
+                                <HBox prefHeight="100.0" prefWidth="500.0">
+                                    <CheckBox fx:id="checkboxCircleExtraction" alignment="CENTER"
+                                              mnemonicParsing="false" text="Extract Board ROI   ">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" right="8.0" top="8.0"/>
+                                        </VBox.margin>
+                                    </CheckBox>
+                                    <Button fx:id="buttonTakeImage" alignment="CENTER" mnemonicParsing="false"
+                                            text="Take Image">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" right="8.0" top="8.0"/>
+                                        </VBox.margin>
+                                    </Button>
+                                    <Button fx:id="buttonReplay" alignment="CENTER" mnemonicParsing="false"
+                                            text="Replay">
+                                        <VBox.margin>
+                                            <Insets bottom="0.0" right="0.0" top="0.0"/>
+                                        </VBox.margin>
+                                    </Button>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                    </children>
+                </AnchorPane>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="408.0" prefWidth="1261.0">
+                    <children>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="457.0" prefWidth="1261.0"
+                                    AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                    AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <children>
+                                <VBox prefHeight="457.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0"
+                                      AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                                      AnchorPane.topAnchor="0.0">
+                                    <children>
+                                        <Label text="Reference Image">
+                                            <VBox.margin>
+                                                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                            </VBox.margin>
+                                        </Label>
+                                        <ImageView fx:id="imageView" fitHeight="440.0" fitWidth="600.0"
+                                                   pickOnBounds="true" preserveRatio="true">
+                                            <VBox.margin>
+                                                <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                            </VBox.margin>
+                                            <viewport>
+                                                <Rectangle2D/>
+                                            </viewport>
+                                        </ImageView>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </AnchorPane>
+                    </children>
+                </AnchorPane>
+            </items>
+        </SplitPane>
+    </children>
+</AnchorPane>

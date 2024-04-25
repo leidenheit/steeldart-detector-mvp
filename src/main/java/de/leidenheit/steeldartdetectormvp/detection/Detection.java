@@ -1,0 +1,934 @@
+package de.leidenheit.steeldartdetectormvp.detection;
+
+import javafx.util.Pair;
+import org.opencv.calib3d.Calib3d;
+import org.opencv.core.*;
+import org.opencv.features2d.BFMatcher;
+import org.opencv.features2d.ORB;
+import org.opencv.highgui.HighGui;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
+
+import java.text.MessageFormat;
+import java.util.*;
+
+public class Detection {
+
+    /**
+     * Presents an image for debugging purposes.
+     *
+     * @param matImage
+     * @param windowName
+     */
+    public static void debugShowImage(final Mat matImage, final String windowName) {
+        HighGui.imshow(windowName, matImage);
+        HighGui.waitKey(0);
+        HighGui.destroyWindow(windowName);
+        HighGui.destroyAllWindows();
+    }
+
+    /**
+     * Extracts the red mask of a dartboard.
+     *
+     * @param bgrImage              - dartboard image as bgr
+     * @param grayImage             - dartboard image as gray
+     * @param threshold             recommended: 50
+     * @param gaussian              recommended: 5
+     * @param morphErodeIterations  recommended: 1
+     * @param morphDilateIterations recommended: 2
+     * @param morphCloseIterations  recommended: 1
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskRed(
+            final Mat bgrImage,
+            final Mat grayImage,
+            final double threshold,
+            final int gaussian,
+            final int morphErodeIterations,
+            final int morphDilateIterations,
+            final int morphCloseIterations) throws LeidenheitException {
+        Mat resultMask = new Mat();
+        Mat subtractedRegionRed = new Mat();
+        Mat regionRedThreshold = new Mat();
+        List<Mat> regionsBGR = new ArrayList<>();
+        try {
+            Core.split(bgrImage, regionsBGR); // returns colors in BGR
+            Mat regionRed = regionsBGR.get(2); // red
+            Core.subtract(regionRed, grayImage, subtractedRegionRed);
+            // reduce noises
+            Imgproc.GaussianBlur(subtractedRegionRed, subtractedRegionRed, new Size(gaussian, gaussian), 0);
+            // grab red contents
+            Imgproc.threshold(subtractedRegionRed, regionRedThreshold, threshold, 255, Imgproc.THRESH_BINARY);
+            // morph mask for optimization
+            Imgproc.morphologyEx(regionRedThreshold, regionRedThreshold, Imgproc.MORPH_ERODE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)), new Point(-1, -1), morphErodeIterations);
+            Imgproc.morphologyEx(regionRedThreshold, regionRedThreshold, Imgproc.MORPH_DILATE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)), new Point(-1, -1), morphDilateIterations);
+            Imgproc.morphologyEx(regionRedThreshold, resultMask, Imgproc.MORPH_CLOSE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5)), new Point(-1, -1), morphCloseIterations);
+            System.out.println("Extraction of red mask completed.");
+
+            subtractedRegionRed.release();
+            regionRedThreshold.release();
+            regionRed.release();
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting red mask", e);
+        }
+    }
+
+    /**
+     * Extracts the green mask of a dartboard.
+     *
+     * @param bgrImage              - dartboard image as bgr
+     * @param grayImage             - dartboard image as gray
+     * @param threshold             recommended: 16
+     * @param gaussian              recommended: 1
+     * @param morphErodeIterations  recommended: 1
+     * @param morphDilateIterations recommended: 2
+     * @param morphCloseIterations  recommended: 1
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskGreen(
+            final Mat bgrImage,
+            final Mat grayImage,
+            final double threshold,
+            final int gaussian,
+            final int morphErodeIterations,
+            final int morphDilateIterations,
+            final int morphCloseIterations) throws LeidenheitException {
+        try {
+            List<Mat> regionsBGR = new ArrayList<>();
+            Core.split(bgrImage, regionsBGR); // returns colors in BGR
+            Mat regionGreen = regionsBGR.get(1); // green
+            Mat subtractedRegionGreen = new Mat();
+            Core.subtract(regionGreen, grayImage, subtractedRegionGreen);
+            Mat regionGreenThreshold = new Mat();
+            // reduce noises
+            Imgproc.GaussianBlur(subtractedRegionGreen, subtractedRegionGreen, new Size(gaussian, gaussian), 0);
+            // grab green contents
+            Imgproc.threshold(subtractedRegionGreen, regionGreenThreshold, threshold, 255, Imgproc.THRESH_BINARY);
+            // morph mask for optimization
+            Mat resultMask = new Mat();
+            Imgproc.morphologyEx(regionGreenThreshold, regionGreenThreshold, Imgproc.MORPH_ERODE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)), new Point(-1, -1), morphErodeIterations);
+            Imgproc.morphologyEx(regionGreenThreshold, regionGreenThreshold, Imgproc.MORPH_DILATE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)), new Point(-1, -1), morphDilateIterations);
+            Imgproc.morphologyEx(regionGreenThreshold, resultMask, Imgproc.MORPH_CLOSE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5)), new Point(-1, -1), morphCloseIterations);
+            System.out.println("Extraction of green mask completed.");
+
+            subtractedRegionGreen.release();
+            regionGreenThreshold.release();
+
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting green mask", e);
+        }
+    }
+
+    /**
+     * Extracts the multiplier mask of a dartboard.
+     *
+     * @param redMask
+     * @param greenMask
+     * @param morphDilateIterations recommended: 1
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskMultipliers(
+            final Mat redMask,
+            final Mat greenMask,
+            final int morphDilateIterations) throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Mat multipliers = new Mat();
+            // combine green and red masks
+            Core.add(redMask, greenMask, multipliers);
+            // morph mask for optimization
+            Imgproc.morphologyEx(multipliers, resultMask, Imgproc.MORPH_DILATE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3)), new Point(-1, -1), morphDilateIterations);
+            System.out.println("Extraction of multiplier mask completed.");
+
+            multipliers.release();
+
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("error while extracting multiplier mask", e);
+        }
+    }
+
+    /**
+     * Extracts the multirings mask of a dartboard.
+     *
+     * @param multipliersMask
+     * @param morphCloseIterations recommended: 3
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskMultiRings(final Mat multipliersMask, final int morphCloseIterations)
+            throws LeidenheitException {
+        try {
+            final var resultMask = new Mat();
+            Imgproc.morphologyEx(multipliersMask, resultMask, Imgproc.MORPH_CLOSE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3)), new Point(-1, -1), morphCloseIterations);
+            System.out.println("Extraction of multi ring mask completed.");
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting multirings mask", e);
+        }
+    }
+
+    /**
+     * Extracts the dartboard mask of a dartboard.
+     *
+     * @param multiRingsMask
+     * @param morphDilateIterations recommended: 5
+     * @param morphErodeIterations  recommended: 11
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskDartboard(final Mat multiRingsMask,
+                                           final int morphDilateIterations,
+                                           final int morphErodeIterations)
+            throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Mat temporaryDartboardMask = imfillHoles(multiRingsMask);
+
+            Imgproc.morphologyEx(temporaryDartboardMask, resultMask, Imgproc.MORPH_DILATE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(5, 5)), new Point(-1, -1), morphDilateIterations);
+            Imgproc.morphologyEx(resultMask, resultMask, Imgproc.MORPH_ERODE,
+                    Imgproc.getStructuringElement(Imgproc.MORPH_CROSS, new Size(3, 3)), new Point(-1, -1), morphErodeIterations);
+            System.out.println("Extraction of dartboard mask completed.");
+
+            temporaryDartboardMask.release();
+
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting dartboard mask", e);
+        }
+    }
+
+    /**
+     * Extracts the miss mask of a dartboard.
+     *
+     * @param dartboardMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskMiss(final Mat dartboardMask) throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Core.bitwise_not(dartboardMask, resultMask);
+            System.out.println("Extraction of miss mask completed.");
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting dartboard mask", e);
+        }
+    }
+
+    /**
+     * Extracts the single mask of a dartboard.
+     *
+     * @param dartboardMask
+     * @param multiRingsMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskSingle(final Mat dartboardMask, final Mat multiRingsMask)
+            throws LeidenheitException {
+        try {
+            Mat tempSingleMask = new Mat();
+            Core.subtract(dartboardMask, multiRingsMask, tempSingleMask);
+            System.out.println("Extraction of single mask completed.");
+            return tempSingleMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting single mask", e);
+        }
+    }
+
+    /**
+     * Extracts the double mask of a dartboard.
+     *
+     * @param dartboardMask
+     * @param singleMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskDouble(final Mat dartboardMask, final Mat singleMask)
+            throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Mat singleFilledMask = imfillHoles(singleMask);
+            Core.subtract(dartboardMask, singleFilledMask, resultMask);
+            System.out.println("Extraction of double mask completed.");
+
+            singleFilledMask.release();
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting double mask", e);
+        }
+    }
+
+    /**
+     * Extracts the triple mask of a dartboard.
+     *
+     * @param dartboardMask
+     * @param doubleMask
+     * @param singleMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskTriple(final Mat dartboardMask, final Mat doubleMask, final Mat singleMask)
+            throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            // combine double and triple masks
+            Mat doubleAndSingleMask = new Mat();
+            Core.add(singleMask, doubleMask, doubleAndSingleMask);
+            // subtract them from dartboard mask
+            Mat innerRingMask = new Mat();
+            Core.subtract(dartboardMask, doubleAndSingleMask, innerRingMask);
+
+            Mat floodFillImage = innerRingMask.clone();
+            Mat mask = new Mat();
+            Imgproc.floodFill(
+                    floodFillImage,
+                    mask,
+                    new Point(0, 0),
+                    Scalar.all(255));
+            Mat floodFillImageInverse = new Mat();
+            Core.bitwise_not(floodFillImage, floodFillImageInverse);
+            Mat maskInnerRing = new Mat();
+            Imgproc.floodFill(
+                    floodFillImageInverse,
+                    maskInnerRing,
+                    new Point(1, 1),
+                    Scalar.all(255));
+            Core.bitwise_not(floodFillImageInverse, innerRingMask);
+            Mat doubleAndSingleMask2 = new Mat();
+            Core.add(singleMask, doubleMask, doubleAndSingleMask2);
+            Mat triple = new Mat();
+            Core.subtract(dartboardMask, doubleAndSingleMask2, triple);
+            Core.subtract(triple, innerRingMask, resultMask);
+
+            System.out.println("Extraction of triple mask completed.");
+
+            doubleAndSingleMask.release();
+            doubleAndSingleMask2.release();
+            triple.release();
+            maskInnerRing.release();
+            floodFillImage.release();
+            floodFillImageInverse.release();
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting triple mask", e);
+        }
+    }
+
+    /**
+     * Extracts the outer bull mask of a dartboard.
+     *
+     * @param multiRingsMask
+     * @param doubleMask
+     * @param tripleMask
+     * @param greenMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskOuterBull(final Mat multiRingsMask, final Mat doubleMask, final Mat tripleMask, final Mat greenMask)
+            throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Mat doubleAndTripleMask = new Mat();
+            Core.add(doubleMask, tripleMask, doubleAndTripleMask);
+            Mat tempMask = new Mat();
+            Core.subtract(multiRingsMask, doubleAndTripleMask, tempMask);
+            Core.bitwise_and(tempMask, greenMask, resultMask);
+            System.out.println("Extraction of outer bull mask completed.");
+
+            doubleAndTripleMask.release();
+            tempMask.release();
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting outer bull mask", e);
+        }
+    }
+
+    /**
+     * Extracts the inner bull mask of a dartboard.
+     *
+     * @param multiRingsMask
+     * @param doubleMask
+     * @param tripleMask
+     * @param redMask
+     * @return {@link Mat}
+     */
+    public static Mat extractMaskInnerBull(final Mat multiRingsMask, final Mat doubleMask, final Mat tripleMask, final Mat redMask)
+            throws LeidenheitException {
+        try {
+            Mat resultMask = new Mat();
+            Mat doubleAndTripleMask = new Mat();
+            Core.add(doubleMask, tripleMask, doubleAndTripleMask);
+            Mat tempMask = new Mat();
+            Core.subtract(multiRingsMask, doubleAndTripleMask, tempMask);
+            Core.bitwise_and(tempMask, redMask, resultMask);
+            System.out.println("Extraction of inner bull mask completed.");
+
+            doubleAndTripleMask.release();
+            tempMask.release();
+            return resultMask;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while extracting inner bull mask", e);
+        }
+    }
+
+    /**
+     * Determines if a given line intersects a given mask.
+     *
+     * @param lineBegin
+     * @param lineEnd
+     * @param mask
+     * @return true, when line intersects the mask. Otherwise, false.
+     */
+    public static boolean lineIntersectsMask(final Point lineBegin, final Point lineEnd, final Mat mask) throws LeidenheitException {
+        try {
+            Mat lineMask = Mat.zeros(mask.size(), mask.type());
+            Imgproc.line(lineMask, lineBegin, lineEnd, new Scalar(255));
+            Mat matOverlapsMask = new Mat();
+            Core.bitwise_and(lineMask, mask, matOverlapsMask);
+            int nonZeroCount = Core.countNonZero(matOverlapsMask);
+
+            lineMask.release();
+            matOverlapsMask.release();
+            return nonZeroCount > 0;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while determining line intersection with mask", e);
+        }
+    }
+
+    /**
+     * Determines Dartboard Segments by HoughLinesP and Canny Edge Detector
+     *
+     * @param center
+     * @param gray
+     * @param segments                      - result
+     * @param maskInnerBull
+     * @param maskDouble
+     * @param maskTriple
+     * @param maskMultiRings
+     * @param cannyGaussian                 - recommended: 1
+     * @param lineCandidateDilateKernelSize - recommended: 4 -> use higher value when too less candidates are detected
+     * @param lineGroupTolerance            - recommended: 5.0
+     * @param cannyThreshold1               - recommend: 400
+     * @param cannyThreshold1               - recommended: 420
+     * @param houghThreshold                - recommended: 210
+     * @param houghMinLineLength            - recommended: 160
+     * @param houghMaxGap                   - recommended: 80
+     * @return Angles for dartboard segments
+     * @throws LeidenheitException
+     */
+    public static ValueAngleRanges determineDartboardSegments(
+            final Point center,
+            final Mat gray,
+            final Mat segments,
+            final Mat maskInnerBull,
+            final Mat maskDouble,
+            final Mat maskTriple,
+            final Mat maskMultiRings,
+            final int cannyGaussian,
+            final int lineCandidateDilateKernelSize,
+            final double lineGroupTolerance,
+            final int cannyThreshold1,
+            final int cannyThreshold2,
+            final int houghThreshold,
+            final int houghMinLineLength,
+            final int houghMaxGap
+    ) throws LeidenheitException {
+        try {
+            List<List<Point>> lineCandidates = Detection.findLineCandidatesByCannyAndHoughLinesP(
+                    gray,
+                    cannyGaussian,
+                    lineCandidateDilateKernelSize,
+                    cannyThreshold1,
+                    cannyThreshold2,
+                    houghThreshold,
+                    houghMinLineLength,
+                    houghMaxGap);
+            List<Line> lines = new ArrayList<>();
+            for (List<Point> candidate : lineCandidates) {
+                for (Point point : candidate) {
+                    double angle = Detection.calculateAngle(center, point);
+                    Line line = Line.builder()
+                            .setCenter(center)
+                            .setLinePoint(point)
+                            .setAngle(angle)
+                            .build();
+                    boolean considerableLine = validateLineIntersections(
+                            line, maskInnerBull, maskDouble, maskTriple, maskMultiRings);
+                    if (considerableLine) {
+                        lines.add(line);
+                    }
+                }
+            }
+            // System.out.printf("Amount of lines found: %s%n", lines.size());
+            List<List<Line>> groupedSegments = groupLinesByTolerance(lines, lineGroupTolerance);
+            List<Line> segmentLines = calculateMeanLines(groupedSegments, center);
+            // debug
+            //        for (final var line : segmentLines) {
+            //            final var considerableLine = rgbMat.clone();
+            //            Imgproc.line(segments, line.getCenter(), line.getLinePoint(), new Scalar(0, 255, 200), 2);
+            // debugShowImage(considerableLine, "considerable_line");
+            //        }
+            ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
+            if (segmentLines.size() == 20) {
+                valueAngleRanges = associateValueAngleRanges(segmentLines);
+                List<Map.Entry<ValueAngleRanges.ValueRange, Integer>> list = new ArrayList<>(valueAngleRanges.getValueAngleRangeMap().entrySet().stream().toList());
+                list.sort(Comparator.comparingDouble(valueRangeIntegerEntry ->
+                        valueRangeIntegerEntry.getKey().minValue()));
+                for (var o : list) {
+                    System.out.printf("\tsegment=%s, angles=%s\n", o.getValue(), o.getKey().toString());
+                }
+            } else {
+                System.out.printf("\nWARNING: requires 20 segment lines but found %d", segmentLines.size());
+
+            }
+            // debug outputs
+            //        final var considerableLines = rgbMat.clone();
+            Imgproc.line(segments, new Point(0, center.y), new Point(1000, center.y), new Scalar(200, 200, 200), 1);
+            for (Line segmentLine : segmentLines) {
+                Imgproc.line(segments, segmentLine.getCenter(), segmentLine.getLinePoint(), new Scalar(0, 255, 255), 1);
+            }
+            //        System.out.printf("valueAngleRanges: %s\n", valueAngleRanges.getValueAngleRangeMap().keySet().size());
+            //        debugShowImage(considerableLines, "considerable lines");
+            return valueAngleRanges;
+        } catch (Exception e) {
+            throw new LeidenheitException(
+                    MessageFormat.format("Error while determining segments ({0})", e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Determines if a given point intersects a given mask.
+     *
+     * @param point
+     * @param mask
+     * @return true, when point intersects the mask. Otherwise, false.
+     */
+    public static boolean pointIntersectsMask(final Point point, final Mat mask) throws LeidenheitException {
+        try {
+            if (point.inside(new Rect(0, 0, mask.cols(), mask.rows()))) {
+                double[] pixel = mask.get((int) point.y, (int) point.x);
+                return pixel[0] != 0;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while determining point intersects mask", e);
+        }
+    }
+
+    /**
+     * Determines the segment value of a given point.
+     *
+     * @param valueAngleRanges
+     * @param angle
+     * @param point
+     * @param maskDartboard
+     * @param maskInnerBull
+     * @param maskOuterBull
+     * @param maskTriple
+     * @param maskDouble
+     * @param maskSingle
+     * @return Segment value
+     */
+    public static Pair<Integer, Mat> evaluatePoint(
+            final ValueAngleRanges valueAngleRanges,
+            final double angle,
+            final Point point,
+            final Mat maskDartboard,
+            final Mat maskInnerBull,
+            final Mat maskOuterBull,
+            final Mat maskTriple,
+            final Mat maskDouble,
+            final Mat maskSingle
+    ) throws LeidenheitException {
+        boolean touchesDartboard = pointIntersectsMask(point, maskDartboard);
+        boolean touchesInnerBull = pointIntersectsMask(point, maskInnerBull);
+        boolean touchesOuterBull = pointIntersectsMask(point, maskOuterBull);
+        boolean touchesTriple = pointIntersectsMask(point, maskTriple);
+        boolean touchesDouble = pointIntersectsMask(point, maskDouble);
+        boolean touchesSingle = pointIntersectsMask(point, maskSingle);
+        if (!touchesDartboard) {
+            System.out.printf("Hitpoint%s -> segment Out\n", point);
+            return new Pair<>(0, maskDartboard);
+        } else if (touchesInnerBull) {
+            System.out.printf("Hitpoint%s -> segment Bullseye\n", point);
+            return new Pair<>(50, maskInnerBull);
+        } else if (touchesOuterBull) {
+            System.out.printf("Hitpoint %s -> segment Bull\n", point);
+            return new Pair<>(25, maskOuterBull);
+        } else {
+            try {
+                final var segmentHit = valueAngleRanges.findValueByAngle(angle);
+                if (touchesDouble) {
+                    System.out.printf("Hitpoint %s -> segment D%d\n", point, segmentHit);
+                    return new Pair<>(segmentHit * 2, maskDouble);
+                } else if (touchesTriple) {
+                    System.out.printf("Hitpoint %s -> segment T%d\n", point, segmentHit);
+                    return new Pair<>(segmentHit * 3, maskTriple);
+                } else if (touchesSingle) {
+                    System.out.printf("Hitpoint %s -> segment %d\n", point, segmentHit);
+                    return new Pair<>(segmentHit, maskSingle);
+                } else {
+                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Out\n", point);
+                    return new Pair<>(0, maskDartboard);
+                }
+            } catch (RuntimeException e) {
+                throw new LeidenheitException("Unexpected error", e);
+            }
+        }
+    }
+
+    /**
+     * returns the center mass of the inner bull mask.
+     *
+     * @param innerBullMask
+     * @return x & y coordinates of center mass
+     */
+    public static Point findCircleCenter(final Mat frame, final Mat innerBullMask) throws LeidenheitException {
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        try {
+            Imgproc.findContours(innerBullMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            if (!contours.isEmpty()) {
+                for (MatOfPoint contour : contours) {
+                    if (Imgproc.contourArea(contour) >= 50.0) {
+                        // calculate the center mass of this contour
+                        Moments moments = Imgproc.moments(contour);
+                        double centerX = moments.get_m10() / moments.get_m00();
+                        double centerY = moments.get_m01() / moments.get_m00();
+                        if (!Double.isNaN(centerX) && !Double.isNaN(centerY)) {
+                            return new Point(centerX, centerY);
+                        }
+                    }
+                }
+            }
+            throw new LeidenheitException("Expected center mass (x, y) to not be NaN", null);
+        } finally {
+            hierarchy.release();
+        }
+    }
+
+    /**
+     * Returns the angle of a point relative to a center point.
+     *
+     * @param center
+     * @param point
+     * @return Angle
+     */
+    public static double calculateAngle(Point center, Point point) {
+        double angleCenterToPoint = Math.toDegrees(Math.atan2(point.y - center.y, point.x - center.x));
+        if (angleCenterToPoint < 0) {
+            angleCenterToPoint += 360;
+        }
+        return angleCenterToPoint;
+    }
+
+    private static ValueAngleRanges associateValueAngleRanges(List<Line> segmentLines) {
+        ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
+        for (int i = 0; i < valueAngleRanges.segmentValueIndexes.size() - 1; i++) {
+            // build up polar coordinate values for angle ranges
+            if (i == 0) {
+                // add first
+                valueAngleRanges.putValueForAngleRange(i, 0, segmentLines.get(0).getAngle());
+            } else {
+                valueAngleRanges.putValueForAngleRange(i, segmentLines.get(i - 1).getAngle(), segmentLines.get(i).getAngle());
+            }
+            if (i == segmentLines.size() - 1) {
+                // add last
+                valueAngleRanges.putValueForAngleRange(i + 1, segmentLines.get(i).getAngle(), 360.0d);
+            }
+        }
+        return valueAngleRanges;
+    }
+
+    /**
+     * finds lines candidates by HoughLinesP
+     *
+     * @param gray
+     * @param gaussian           - recommended: 1
+     * @param dilateKernelSize   - recommend: 4 -> use higher value when too less segment lines are detected
+     * @param cannyThreshold1    - recommend: 400
+     * @param cannyThreshold1    - recommended: 420
+     * @param houghThreshold     - recommended: 210
+     * @param houghMinLineLength - recommended: 160
+     * @param houghMaxGap        - recommended: 80
+     * @return Line Points of candidate lines
+     */
+    private static List<List<Point>> findLineCandidatesByCannyAndHoughLinesP(
+            final Mat gray,
+            final int gaussian,
+            final int dilateKernelSize,
+            final int cannyThreshold1,
+            final int cannyThreshold2,
+            final int houghThreshold,
+            final int houghMinLineLength,
+            final int houghMaxGap
+    ) throws LeidenheitException {
+        try {
+//            // blur before canny
+//            TODO bilateral over gauss?
+//            Mat blurred = new Mat();
+//            Imgproc.GaussianBlur(gray, blurred, new Size(gaussian, gaussian), 0);
+            // Bilateral filter
+            Mat filtered = new Mat();
+            Imgproc.bilateralFilter(gray, filtered, 18, 150, 150);
+
+            // canny edge detection
+            Mat edges = new Mat();
+//            Imgproc.Canny(blurred, edges, cannyThreshold1, cannyThreshold2); // works
+            Imgproc.Canny(filtered, edges, cannyThreshold1, cannyThreshold2); // works
+
+            Mat kernelDilate = Imgproc.getStructuringElement(
+                    Imgproc.MORPH_DILATE,
+                    new Size(dilateKernelSize, dilateKernelSize));
+            Mat edgesDilate = new Mat();
+            Imgproc.dilate(
+                    edges,
+                    edgesDilate,
+                    kernelDilate);
+
+            // line detection
+            Mat linesP = new Mat();
+            Imgproc.HoughLinesP(edgesDilate, linesP, 1, Math.PI / 180, houghThreshold, houghMinLineLength, houghMaxGap);
+            List<List<Point>> candidates = new ArrayList<List<Point>>();
+            for (int row = 0; row < linesP.rows(); row++) {
+                double[] l = linesP.get(row, 0);
+                Point lineBegin = new Point(l[0], l[1]);
+                Point lineEnd = new Point(l[2], l[3]);
+                candidates.add(List.of(lineBegin, lineEnd));
+            }
+
+//            blurred.release();
+            filtered.release();
+            edges.release();
+            kernelDilate.release();
+            edgesDilate.release();
+            linesP.release();
+
+            return candidates;
+        } catch (Exception e) {
+            throw new LeidenheitException("Error while line detection", e);
+        }
+    }
+
+    private static boolean validateLineIntersections(final Line line, final Mat maskInnerBull, final Mat maskDouble, final Mat maskTriple, final Mat maskMultiRings) throws LeidenheitException {
+        boolean intersectsBullseye = lineIntersectsMask(line.getCenter(), line.getLinePoint(), maskInnerBull);
+        boolean intersectsDoubleRing = lineIntersectsMask(line.getCenter(), line.getLinePoint(), maskDouble);
+        boolean intersectsTripleRing = lineIntersectsMask(line.getCenter(), line.getLinePoint(), maskTriple);
+        boolean intersectsMultiRings = lineIntersectsMask(line.getCenter(), line.getLinePoint(), maskMultiRings);
+        return intersectsBullseye && intersectsTripleRing && intersectsDoubleRing && intersectsMultiRings;
+    }
+
+    private static List<List<Line>> groupLinesByTolerance(final List<Line> lines, final double tolerance) {
+        List<List<Line>> groupedSegments = new ArrayList<>();
+        lines.sort(Comparator.comparingDouble(Line::getAngle));
+        // group segments by mean value of angle
+        double currentAngleSum = lines.get(0).getAngle();
+        int groupSize = 1;
+
+        for (int i = 1; i < lines.size(); i++) {
+            double angle = lines.get(i).getAngle();
+            if (Math.abs(angle - currentAngleSum / groupSize) <= tolerance) {
+                // add to current group
+                currentAngleSum += angle;
+                groupSize++;
+            } else {
+                // new group
+                List<Line> newGroup = new ArrayList<>(lines.subList(i - groupSize, i));
+                groupedSegments.add(newGroup);
+                currentAngleSum = angle;
+                groupSize = 1;
+            }
+        }
+        // add last group
+        groupedSegments.add(new ArrayList<>(lines.subList(lines.size() - groupSize, lines.size())));
+
+        // output
+//        int gIndex = 1;
+//        for (List<Line> group : groupedSegments) {
+//            System.out.printf("Group[%s]:", gIndex);
+//            for (Line segment : group) {
+//                System.out.println("  Angle: " + segment.getAngle() + ", CenterX: " + segment.getLinePoint().x + ", CenterY: " + segment.getLinePoint().y);
+//            }
+//            gIndex++;
+//        }
+
+        return groupedSegments;
+    }
+
+    private static List<Line> calculateMeanLines(final List<List<Line>> lineGroups, final Point center) {
+        List<Line> result = new ArrayList<>();
+        for (List<Line> lineGroup : lineGroups) {
+            double groupMeanAngle = 0;
+            double groupMeanX = 0;
+            double groupMeanY = 0;
+            for (Line line : lineGroup) {
+                groupMeanAngle += line.getAngle();
+                groupMeanX += line.getLinePoint().x;
+                groupMeanY += line.getLinePoint().y;
+            }
+            groupMeanAngle = groupMeanAngle / lineGroup.size();
+            groupMeanX = groupMeanX / lineGroup.size();
+            groupMeanY = groupMeanY / lineGroup.size();
+            // System.out.printf("Group[%d] meanAngle=%.2f meanX=%.2f meanY=%.2f\n", gIndex2, groupMeanAngle, groupMeanX, groupMeanY);
+
+            Line groupMeanLine = Line.builder()
+                    .setCenter(center)
+                    .setLinePoint(new Point(groupMeanX, groupMeanY))
+                    .setAngle(groupMeanAngle)
+                    .build();
+            result.add(groupMeanLine);
+        }
+        return result;
+    }
+
+    private static Mat imfillHoles(final Mat imageToUse) {
+        Mat dummy = imageToUse.clone();
+        Mat mask = new Mat();
+        Imgproc.floodFill(
+                dummy,
+                mask,
+                new Point(0, 0),
+                Scalar.all(255)
+        );
+        Mat floodFillInverse = new Mat();
+        Core.bitwise_not(dummy, floodFillInverse);
+        Mat filledImage = new Mat();
+        Core.bitwise_or(imageToUse, floodFillInverse, filledImage);
+
+        dummy.release();
+        mask.release();
+        floodFillInverse.release();
+
+        return filledImage;
+    }
+
+
+    // TODO move to own file
+    ///////////////////////////////////////////////////////////////
+    // Dart Detection
+
+    /**
+     * Determines the tip of a dart by euklidische distance.
+     *
+     * @param convexHull
+     * @return x & y coordinates of the detected dart tip.
+     */
+    public static Point[] findArrowTip(final MatOfPoint convexHull) {
+        // calc the mass center of the hull
+        Moments moments = Imgproc.moments(convexHull);
+        double centerX = moments.get_m10() / moments.get_m00();
+        double centerY = moments.get_m01() / moments.get_m00();
+        Point center = new Point(centerX, centerY);
+        // use Euklidische Distanz in order to classify the points of the contour from nearest to furthest
+        List<Point> contourPoints = convexHull.toList();
+        contourPoints.sort(Comparator.comparingDouble(p -> Math.pow(p.x - center.x, 2) + Math.pow(p.y - center.y, 2)));
+        // temporarily use the furthest point as tip of dart
+        Point arrowTip = contourPoints.get(contourPoints.size() - 1);
+
+        Rect boundingBox = Imgproc.boundingRect(convexHull);
+        var res = new Point[4];
+        res[0] = arrowTip;
+        res[1] = boundingBox.tl();
+        res[2] = boundingBox.br();
+        res[3] = center;
+        return res;
+    }
+
+    /**
+     * Determines if there are significant changes in a mask by checking non-zero-pixels against thresholds.
+     *
+     * @param mask
+     * @param thresholdLow  - recommendation >1920x1080: vid=(1500, 6000), image=(1000, 50000)
+     * @param thresholdHigh - recommendation >1920x1080: vid=(1500, 6000), image=(1000, 50000)
+     * @return true if non-zero pixels are within the threshold range
+     */
+    public static boolean hasSignificantChanges(final Mat mask, final int thresholdLow, final int thresholdHigh) {
+        int countNonZeroPixels = Core.countNonZero(mask);
+        return countNonZeroPixels >= thresholdLow && countNonZeroPixels <= thresholdHigh;
+    }
+
+    /**
+     * Extracts a merge contour from contours satisfying minimal contour area in a given mask
+     *
+     * @param minContourArea - recommendation @ >1920: >100
+     * @return {@link MatOfPoint}
+     */
+    public static MatOfPoint extractMergedContour(final Mat mask, final int minContourArea) {
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        List<MatOfPoint> filteredContours = new ArrayList<>();
+        for (MatOfPoint contour : contours) {
+            double contourArea = Imgproc.contourArea(contour);
+            if (contourArea >= minContourArea) {
+//                System.out.printf("Found considerable contour area %.2f that fits the threshold of %d\n", contourArea, minContourArea);
+                filteredContours.add(contour);
+            }
+        }
+        // merge contours in case the dart contour is split
+        final List<Point> mergedPoints = new ArrayList<>();
+        if (!filteredContours.isEmpty()) {
+//            System.out.printf("Merging %d contours\n", filteredContours.size());
+            for (final var contour : filteredContours) {
+                mergedPoints.addAll(contour.toList());
+            }
+        }
+        final var mergedContour = new MatOfPoint();
+        mergedContour.fromList(mergedPoints);
+
+//        double mergedContourArea = Imgproc.contourArea(mergedContour);
+//        System.out.printf("Merged contour area:  %.2f\n", mergedContourArea);
+
+        hierarchy.release();
+
+        return mergedContour;
+    }
+
+    public static MatOfPoint findConvexHull(final MatOfPoint contourPoints) {
+        MatOfInt hull = new MatOfInt();
+        Imgproc.convexHull(contourPoints, hull);
+        final Point[] contourArray = contourPoints.toArray();
+        final Point[] hullPoints = new Point[hull.rows()];
+        final List<Integer> hullContourIndexList = hull.toList();
+        for (int i = 0; i < hullContourIndexList.size(); i++) {
+            hullPoints[i] = contourArray[hullContourIndexList.get(i)];
+        }
+
+        hull.release();
+
+        return new MatOfPoint(hullPoints);
+    }
+
+    public static double calculateScaleFactor1024(final double frameWidth) {
+        double res = 1.0;
+        if (frameWidth > 1024d) {
+            res = ((1024d * 100d) / frameWidth) / 100d;
+            System.out.printf("Adjusting scale factor to %.2f\n", res);
+        }
+        return res;
+    }
+
+    /**
+     * Rotates a point about a center point.
+     *
+     * @param center
+     * @param point
+     * @param angle
+     * @return
+     */
+    public static Point rotatePoint(Point center, Point point, double angle) {
+        double cosTheta = Math.cos(angle);
+        double sinTheta = Math.sin(angle);
+
+        double x = (point.x - center.x) * cosTheta - (point.y - center.y) * sinTheta + center.x;
+        double y = (point.x - center.x) * sinTheta + (point.y - center.y) * cosTheta + center.y;
+
+        return new Point(x, y);
+    }
+}
