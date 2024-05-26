@@ -26,7 +26,7 @@
                                     </Label>
                                     <Slider fx:id="sliderBilateralDiameter" blockIncrement="1.0" majorTickUnit="1.0"
                                             max="25.0" min="1.0" minorTickCount="1" prefWidth="350.0"
-                                            showTickLabels="true" snapToTicks="true" value="5.0">
+                                            showTickLabels="true" snapToTicks="true" value="9.0">
                                         <HBox.margin>
                                             <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
                                         </HBox.margin>
@@ -40,7 +40,7 @@
                                     </Label>
                                     <Slider fx:id="sliderBilateralSigColor" blockIncrement="5.0" majorTickUnit="5.0"
                                             max="250.0" min="5.0" minorTickCount="5" prefWidth="400.0"
-                                            showTickLabels="true" snapToTicks="true" value="175.0">
+                                            showTickLabels="true" snapToTicks="true" value="75.0">
                                         <HBox.margin>
                                             <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
                                         </HBox.margin>
@@ -54,7 +54,7 @@
                                     </Label>
                                     <Slider fx:id="sliderBilateralSigSpace" blockIncrement="5.0" majorTickUnit="5.0"
                                             max="250.0" min="5.0" minorTickCount="5" prefWidth="400.0"
-                                            showTickLabels="true" snapToTicks="true" value="175.0">
+                                            showTickLabels="true" snapToTicks="true" value="75.0">
                                         <HBox.margin>
                                             <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
                                         </HBox.margin>

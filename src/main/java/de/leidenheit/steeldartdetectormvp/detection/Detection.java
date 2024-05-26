@@ -1,10 +1,7 @@
 package de.leidenheit.steeldartdetectormvp.detection;
 
 import javafx.util.Pair;
-import org.opencv.calib3d.Calib3d;
 import org.opencv.core.*;
-import org.opencv.features2d.BFMatcher;
-import org.opencv.features2d.ORB;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.imgproc.Moments;
@@ -23,7 +20,6 @@ public class Detection {
     public static void debugShowImage(final Mat matImage, final String windowName) {
         HighGui.imshow(windowName, matImage);
         HighGui.waitKey(0);
-        HighGui.destroyWindow(windowName);
         HighGui.destroyAllWindows();
     }
 
@@ -404,14 +400,14 @@ public class Detection {
      * Determines Dartboard Segments by HoughLinesP and Canny Edge Detector
      *
      * @param center
-     * @param gray
+     * @param bgr
      * @param segments                      - result
      * @param maskInnerBull
      * @param maskDouble
      * @param maskTriple
      * @param maskMultiRings
      * @param cannyGaussian                 - recommended: 1
-     * @param lineCandidateDilateKernelSize - recommended: 4 -> use higher value when too less candidates are detected
+     * @param lineCandidateDilateKernelSize - recommended: 4 -> use higher value when fewer candidates are detected
      * @param lineGroupTolerance            - recommended: 5.0
      * @param cannyThreshold1               - recommend: 400
      * @param cannyThreshold1               - recommended: 420
@@ -423,7 +419,7 @@ public class Detection {
      */
     public static ValueAngleRanges determineDartboardSegments(
             final Point center,
-            final Mat gray,
+            final Mat bgr,
             final Mat segments,
             final Mat maskInnerBull,
             final Mat maskDouble,
@@ -440,8 +436,7 @@ public class Detection {
     ) throws LeidenheitException {
         try {
             List<List<Point>> lineCandidates = Detection.findLineCandidatesByCannyAndHoughLinesP(
-                    gray,
-                    cannyGaussian,
+                    bgr,
                     lineCandidateDilateKernelSize,
                     cannyThreshold1,
                     cannyThreshold2,
@@ -486,11 +481,12 @@ public class Detection {
                 System.out.printf("\nWARNING: requires 20 segment lines but found %d", segmentLines.size());
 
             }
-            // debug outputs
-            //        final var considerableLines = rgbMat.clone();
+            // horizontal line
             Imgproc.line(segments, new Point(0, center.y), new Point(1000, center.y), new Scalar(200, 200, 200), 1);
+            // segment lines
+            Scalar lineColor = segmentLines.size() == 20 ? new Scalar(0, 255, 0) : new Scalar(0, 255, 255);
             for (Line segmentLine : segmentLines) {
-                Imgproc.line(segments, segmentLine.getCenter(), segmentLine.getLinePoint(), new Scalar(0, 255, 255), 1);
+                Imgproc.line(segments, segmentLine.getCenter(), segmentLine.getLinePoint(), lineColor, 1);
             }
             //        System.out.printf("valueAngleRanges: %s\n", valueAngleRanges.getValueAngleRangeMap().keySet().size());
             //        debugShowImage(considerableLines, "considerable lines");
@@ -512,7 +508,7 @@ public class Detection {
         try {
             if (point.inside(new Rect(0, 0, mask.cols(), mask.rows()))) {
                 double[] pixel = mask.get((int) point.y, (int) point.x);
-                return pixel[0] != 0;
+                return pixel[0] >= 252; // almost white
             } else {
                 return false;
             }
@@ -574,8 +570,8 @@ public class Detection {
                     System.out.printf("Hitpoint %s -> segment %d\n", point, segmentHit);
                     return new Pair<>(segmentHit, maskSingle);
                 } else {
-                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Out\n", point);
-                    return new Pair<>(0, maskDartboard);
+                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Single\n", point);
+                    return new Pair<>(segmentHit, maskSingle);
                 }
             } catch (RuntimeException e) {
                 throw new LeidenheitException("Unexpected error", e);
@@ -596,7 +592,7 @@ public class Detection {
             Imgproc.findContours(innerBullMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
             if (!contours.isEmpty()) {
                 for (MatOfPoint contour : contours) {
-                    if (Imgproc.contourArea(contour) >= 50.0) {
+                    if (Imgproc.contourArea(contour) >= 5.0) {
                         // calculate the center mass of this contour
                         Moments moments = Imgproc.moments(contour);
                         double centerX = moments.get_m10() / moments.get_m00();
@@ -660,8 +656,7 @@ public class Detection {
      * @return Line Points of candidate lines
      */
     private static List<List<Point>> findLineCandidatesByCannyAndHoughLinesP(
-            final Mat gray,
-            final int gaussian,
+            final Mat bgr,
             final int dilateKernelSize,
             final int cannyThreshold1,
             final int cannyThreshold2,
@@ -670,32 +665,29 @@ public class Detection {
             final int houghMaxGap
     ) throws LeidenheitException {
         try {
-//            // blur before canny
-//            TODO bilateral over gauss?
-//            Mat blurred = new Mat();
-//            Imgproc.GaussianBlur(gray, blurred, new Size(gaussian, gaussian), 0);
-            // Bilateral filter
-            Mat filtered = new Mat();
-            Imgproc.bilateralFilter(gray, filtered, 18, 150, 150);
+            Mat gray = new Mat();
+            Imgproc.cvtColor(bgr, gray, Imgproc.COLOR_BGR2GRAY);
+            Mat blurredFrame = new Mat();
+            Imgproc.bilateralFilter(gray, blurredFrame, 5, 50, 50);
+
+            Mat thres = new Mat();
+            Imgproc.threshold(blurredFrame, thres, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+
+            Mat kernelDilate = Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(dilateKernelSize, dilateKernelSize));
+            Mat thresholdDilate = new Mat();
+            Imgproc.dilate(
+                    thres,
+                    thresholdDilate,
+                    kernelDilate);
 
             // canny edge detection
             Mat edges = new Mat();
-//            Imgproc.Canny(blurred, edges, cannyThreshold1, cannyThreshold2); // works
-            Imgproc.Canny(filtered, edges, cannyThreshold1, cannyThreshold2); // works
-
-            Mat kernelDilate = Imgproc.getStructuringElement(
-                    Imgproc.MORPH_DILATE,
-                    new Size(dilateKernelSize, dilateKernelSize));
-            Mat edgesDilate = new Mat();
-            Imgproc.dilate(
-                    edges,
-                    edgesDilate,
-                    kernelDilate);
+            Imgproc.Canny(thresholdDilate, edges, cannyThreshold1, cannyThreshold2);
 
             // line detection
             Mat linesP = new Mat();
-            Imgproc.HoughLinesP(edgesDilate, linesP, 1, Math.PI / 180, houghThreshold, houghMinLineLength, houghMaxGap);
-            List<List<Point>> candidates = new ArrayList<List<Point>>();
+            Imgproc.HoughLinesP(edges, linesP, 1, Math.PI / 180, houghThreshold, houghMinLineLength, houghMaxGap);
+            List<List<Point>> candidates = new ArrayList<>();
             for (int row = 0; row < linesP.rows(); row++) {
                 double[] l = linesP.get(row, 0);
                 Point lineBegin = new Point(l[0], l[1]);
@@ -703,11 +695,11 @@ public class Detection {
                 candidates.add(List.of(lineBegin, lineEnd));
             }
 
-//            blurred.release();
-            filtered.release();
+            gray.release();
+            thres.release();
             edges.release();
             kernelDilate.release();
-            edgesDilate.release();
+            thresholdDilate.release();
             linesP.release();
 
             return candidates;
@@ -812,32 +804,93 @@ public class Detection {
     // TODO move to own file
     ///////////////////////////////////////////////////////////////
     // Dart Detection
-
     /**
-     * Determines the tip of a dart by euklidische distance.
      *
      * @param convexHull
-     * @return x & y coordinates of the detected dart tip.
+     * @param frame
+     * @return
      */
-    public static Point[] findArrowTip(final MatOfPoint convexHull) {
-        // calc the mass center of the hull
+    public static Pair<Double, Point[]> findArrowTip(final MatOfPoint contour, final MatOfPoint convexHull, Mat frame) {
+        // contour mass center
         Moments moments = Imgproc.moments(convexHull);
-        double centerX = moments.get_m10() / moments.get_m00();
-        double centerY = moments.get_m01() / moments.get_m00();
-        Point center = new Point(centerX, centerY);
-        // use Euklidische Distanz in order to classify the points of the contour from nearest to furthest
+        Point center = new Point(moments.get_m10() / moments.get_m00(), moments.get_m01() / moments.get_m00());
+
+        // determine furthest point (tip)
         List<Point> contourPoints = convexHull.toList();
-        contourPoints.sort(Comparator.comparingDouble(p -> Math.pow(p.x - center.x, 2) + Math.pow(p.y - center.y, 2)));
-        // temporarily use the furthest point as tip of dart
-        Point arrowTip = contourPoints.get(contourPoints.size() - 1);
+        Point arrowTip = findFurthestPoint(contourPoints, center);
+
+        // euclidean distance
+        double euclideanDistance = calculateEuclideanDistance(center, arrowTip);
+        DartSingleton.getInstance().euclideanDistances.add(euclideanDistance);
+        double euclideanMedian = calcMedian(DartSingleton.getInstance().euclideanDistances);
+        // angle
+        double arrowAngle = calculateAngle(center, arrowTip);
+        DartSingleton.getInstance().arrowAngles.add(arrowAngle);
+        double arrowAngleMedian = calcMedian(DartSingleton.getInstance().arrowAngles);
+
+        // determine if the arrow is covered and an arrow tip estimation should take place here
+        if (shouldExtendArrowTip(contour, euclideanDistance, arrowAngle)) {
+            // estimation
+            double estimatedX = center.x + euclideanMedian * Math.cos(Math.toRadians(arrowAngleMedian));
+            double estimatedY = center.y + euclideanMedian * Math.sin(Math.toRadians(arrowAngleMedian));
+            Point estimatedTip = new Point(estimatedX, estimatedY);
+
+            // override
+            arrowTip = estimatedTip;
+
+            // TODO debugging
+//            Mat line = frame.clone();
+//            Imgproc.circle(line, estimatedTip, 3, new Scalar(0, 255, 0), -1);
+//            Imgproc.putText(line, "estimated", estimatedTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+//            Imgproc.circle(line, center, 3, new Scalar(255, 0, 0), -1);
+//            Imgproc.putText(line, "center", center, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+//            Imgproc.circle(line, arrowTip, 3, new Scalar(0, 0, 255), -1);
+//            Imgproc.putText(line, "tip", arrowTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+//            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
+//             debugShowImage(line, "");
+//            line.release();
+        }
 
         Rect boundingBox = Imgproc.boundingRect(convexHull);
-        var res = new Point[4];
-        res[0] = arrowTip;
-        res[1] = boundingBox.tl();
-        res[2] = boundingBox.br();
-        res[3] = center;
-        return res;
+        return new Pair<>(euclideanDistance, new Point[]{arrowTip, boundingBox.tl(), boundingBox.br(), center});
+    }
+
+    /**
+     *
+     * @param points
+     * @param center
+     * @return
+     */
+    private static Point findFurthestPoint(List<Point> points, Point center) {
+        return points.stream()
+                .max(Comparator.comparingDouble(p -> calculateEuclideanDistance(p, center)))
+                .orElseThrow(() -> new IllegalArgumentException("List of points is empty"));
+    }
+
+    /**
+     *
+     * @param p1
+     * @param p2
+     * @return
+     */
+    private static double calculateEuclideanDistance(Point p1, Point p2) {
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    }
+
+    /**
+     *
+     * @param euclideanDistance
+     * @return
+     */
+    private static boolean shouldExtendArrowTip(final MatOfPoint contour, final double euclideanDistance, final double angle) {
+        double medianEuclid = calcMedian(DartSingleton.getInstance().euclideanDistances);
+        double mediaAngle = calcMedian(DartSingleton.getInstance().arrowAngles);
+        boolean euclidBelowThreshold = (euclideanDistance < medianEuclid)
+                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20d);
+        boolean angleBelowThreshold = (angle < mediaAngle)
+                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 20d);
+        System.out.printf("shouldExtendArrowTip: angle=%s (median=%s); euclideanDist=%s (median=%s)\n", angle, mediaAngle, euclideanDistance, medianEuclid);
+        return euclidBelowThreshold || angleBelowThreshold;
     }
 
     /**
@@ -890,6 +943,11 @@ public class Detection {
         return mergedContour;
     }
 
+    /**
+     *
+     * @param contourPoints
+     * @return
+     */
     public static MatOfPoint findConvexHull(final MatOfPoint contourPoints) {
         MatOfInt hull = new MatOfInt();
         Imgproc.convexHull(contourPoints, hull);
@@ -905,6 +963,11 @@ public class Detection {
         return new MatOfPoint(hullPoints);
     }
 
+    /**
+     *
+     * @param frameWidth
+     * @return
+     */
     public static double calculateScaleFactor1024(final double frameWidth) {
         double res = 1.0;
         if (frameWidth > 1024d) {
@@ -922,7 +985,7 @@ public class Detection {
      * @param angle
      * @return
      */
-    public static Point rotatePoint(Point center, Point point, double angle) {
+    public static Point rotatePoint(final Point center, final Point point, double angle) {
         double cosTheta = Math.cos(angle);
         double sinTheta = Math.sin(angle);
 
@@ -930,5 +993,24 @@ public class Detection {
         double y = (point.x - center.x) * sinTheta + (point.y - center.y) * cosTheta + center.y;
 
         return new Point(x, y);
+    }
+
+    /**
+     *
+     * @param elements
+     * @return
+     */
+    public static double calcMedian(final List<Double> elements) {
+        List<Double> workingCopy = new ArrayList<>(elements);
+        workingCopy.sort(Double::compareTo);
+
+        int halfLen = workingCopy.size() / 2;
+        boolean isEven = (workingCopy.size() % 2) == 0;
+        if (isEven) {
+            double x = workingCopy.get(halfLen);
+            double y = workingCopy.get((halfLen) - 1);
+            return (x + y) / 2;
+        }
+        return workingCopy.get(halfLen);
     }
 }

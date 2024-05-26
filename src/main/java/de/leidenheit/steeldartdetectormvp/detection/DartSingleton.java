@@ -31,11 +31,13 @@ public class DartSingleton implements Serializable {
     // ignored by serialization
     public transient Point arrowTipBoundingBoxBr = null;
 
+    // ignored by serialization
+    private final transient List<String> debugList = new ArrayList<>();
+    public final transient List<Double> euclideanDistances = new ArrayList<>();
+    public final transient List<Double> arrowAngles = new ArrayList<>();
+
     // scale factor configuration
     public double scaleFactor = 1d;
-
-    // ignored by serialization
-    private transient final List<String> debugList = new ArrayList<>();
 
     public int vidGaussian = 5;
     public int vidCloseIterations = 1;
@@ -44,7 +46,8 @@ public class DartSingleton implements Serializable {
     public int vidSubtractorThreshold = 75;
     public int vidMinContourArea = 100;
     public int vidMaxMergedContourArea = 15_000;
-
+    public double vidAspectRatioLow = 0;
+    public double vidAspectRatioHigh = 3;
     private DartSingleton() throws URISyntaxException {
         // hide constructor
         errorImage = FxUtil.retrieveResourceAsMat("images/placeholder", "error.jpg");
@@ -76,6 +79,8 @@ public class DartSingleton implements Serializable {
                     oos.writeInt(vidSubtractorThreshold);
                     oos.writeInt(vidMinContourArea);
                     oos.writeInt(vidMaxMergedContourArea);
+                    oos.writeDouble(vidAspectRatioLow);
+                    oos.writeDouble(vidAspectRatioHigh);
 
                     return true;
                 }
@@ -100,6 +105,8 @@ public class DartSingleton implements Serializable {
                 vidSubtractorThreshold = ois.readInt();
                 vidMinContourArea = ois.readInt();
                 vidMaxMergedContourArea = ois.readInt();
+                vidAspectRatioLow = ois.readDouble();
+                vidAspectRatioHigh = ois.readDouble();
 
                 return true;
             }

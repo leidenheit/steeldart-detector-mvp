@@ -1,95 +1,258 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.*?>
+<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
 <AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.eval.EvaluationController">
-    <SplitPane centerShape="false" dividerPositions="0.30376344086021506" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="274.0" prefWidth="1261.0">
-            <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                <VBox prefHeight="223.0" prefWidth="2258.0">
-                    <TextArea fx:id="textAreaLog" editable="false" prefHeight="200.0" prefWidth="1170.0" promptText="Log">
-                        <VBox.margin>
-                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                        </VBox.margin>
-                    </TextArea>
-                </VBox>
-                <VBox prefHeight="261.0" prefWidth="1274.0">
-                    <Button fx:id="buttonResetScore" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Reset Params">
-                        <VBox.margin>
-                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                        </VBox.margin>
-                    </Button>
-                    <Button fx:id="buttonTakeImage" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Take Snapshot">
-                        <VBox.margin>
-                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                        </VBox.margin>
-                    </Button>
-                    <Button fx:id="buttonReplay" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Replay Video">
-                        <VBox.margin>
-                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                        </VBox.margin>
-                    </Button>
-                </VBox>
-            </HBox>
-        </AnchorPane>
+    <SplitPane centerShape="false" dividerPositions="0.6461883408071749" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="523.0" prefWidth="1261.0">
             <SplitPane orientation="VERTICAL" prefHeight="477.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                     <HBox prefHeight="235.0" prefWidth="1259.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                        <VBox prefHeight="475.0" prefWidth="598.0">
-                            <ImageView fx:id="imageView" fitHeight="480.0" fitWidth="640.0" pickOnBounds="true" preserveRatio="true">
-                                <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                                </VBox.margin>
-                                <viewport>
-                                    <Rectangle2D />
-                                </viewport>
-                            </ImageView>
+                        <VBox prefHeight="511.0" prefWidth="416.0">
+                            <VBox prefHeight="536.0" prefWidth="416.0">
+                                <children>
+                                    <Label fx:id="labelSuccessRatio" contentDisplay="TOP" text="Fail Ratio: n/a">
+                                        <font>
+                                            <Font size="16.0" />
+                                        </font>
+                                        <VBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </VBox.margin>
+                                    </Label>
+                                    <Label fx:id="labelRemainingScore" alignment="CENTER" prefHeight="103.0" prefWidth="400.0" text="not implemented">
+                                        <font>
+                                            <Font name="System Bold" size="80.0" />
+                                        </font>
+                                        <VBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </VBox.margin>
+                                    </Label>
+                                    <Label fx:id="labelCameraInfo" text="Information about Camera">
+                                        <VBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </VBox.margin>
+                                    </Label>
+                                    <Label fx:id="labelFeedInfo" text="Information about Frames and FPS">
+                                        <VBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </VBox.margin>
+                                    </Label>
+                                    <Separator prefHeight="31.0" prefWidth="416.0" />
+                                    <ImageView fx:id="imageView" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true">
+                                        <VBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </VBox.margin>
+                                        <viewport>
+                                            <Rectangle2D />
+                                        </viewport>
+                                        <image>
+                                            <Image url="@../../images/placeholder/placeholder.jpg" />
+                                        </image>
+                                    </ImageView>
+                                </children>
+                            </VBox>
                         </VBox>
-                        <VBox prefHeight="475.0" prefWidth="655.0">
-                            <Label fx:id="labelFeedInfo" text="Information about Frames and FPS">
+                        <VBox prefHeight="530.0" prefWidth="839.0">
+                            <Label prefHeight="38.0" prefWidth="833.0" text="Score of Darts 1 to 3; Evaluation Mask; Arrow Detection Mask">
                                 <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                    <Insets left="8.0" right="8.0" />
                                 </VBox.margin>
                             </Label>
-                            <Label fx:id="labelCameraInfo" text="Information about Camera">
-                                <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                                </VBox.margin>
-                            </Label>
-                            <Separator prefWidth="200.0" />
-                            <TextField fx:id="txtScoreFirst" editable="false" promptText="Waiting for Dart">
-                                <font>
-                                    <Font size="64.0" />
-                                </font>
-                                <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                                </VBox.margin>
-                            </TextField>
-                            <TextField fx:id="txtScoreSecond" editable="false" promptText="Waiting for Dart">
-                                <font>
-                                    <Font size="64.0" />
-                                </font>
-                                <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                                </VBox.margin>
-                            </TextField>
-                            <TextField fx:id="txtScoreThird" editable="false" promptText="Waiting for Dart">
-                                <font>
-                                    <Font size="64.0" />
-                                </font>
-                                <VBox.margin>
-                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
-                                </VBox.margin>
-                            </TextField>
+                            <HBox prefHeight="100.0" prefWidth="200.0">
+                                <children>
+                                    <TextField fx:id="textfieldFirst" editable="false" onMouseClicked="#markAsFalsePositive" promptText="n/a">
+                                        <font>
+                                            <Font size="64.0" />
+                                        </font>
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </HBox.margin>
+                              <cursor>
+                                 <Cursor fx:constant="HAND" />
+                              </cursor>
+                                    </TextField>
+                                    <TextField fx:id="textfieldSecond" editable="false" onMouseClicked="#markAsFalsePositive" promptText="n/a">
+                                        <font>
+                                            <Font size="64.0" />
+                                        </font>
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </HBox.margin>
+                              <cursor>
+                                 <Cursor fx:constant="HAND" />
+                              </cursor>
+                                    </TextField>
+                                    <TextField fx:id="textfieldThird" editable="false" onMouseClicked="#markAsFalsePositive" promptText="n/a">
+                                        <font>
+                                            <Font size="64.0" />
+                                        </font>
+                                        <HBox.margin>
+                                            <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                        </HBox.margin>
+                              <cursor>
+                                 <Cursor fx:constant="HAND" />
+                              </cursor>
+                                    </TextField>
+                                </children>
+                            </HBox>
+                            <Separator prefHeight="24.0" prefWidth="839.0" />
+                            <HBox prefHeight="182.0" prefWidth="655.0">
+                                <children>
+                                    <ImageView fx:id="imageViewEvalMask" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true">
+                                        <image>
+                                            <Image url="@../../images/placeholder/placeholder.jpg" />
+                                        </image>
+                                        <HBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </HBox.margin>
+                                    </ImageView>
+                                    <Separator orientation="VERTICAL" prefHeight="300.0" prefWidth="5.0" />
+                                    <ImageView fx:id="imageViewArrowTipCenter" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true">
+                                        <image>
+                                            <Image url="@../../images/placeholder/placeholder.jpg" />
+                                        </image>
+                                        <HBox.margin>
+                                            <Insets left="8.0" right="8.0" />
+                                        </HBox.margin>
+                                    </ImageView>
+                                </children>
+                            </HBox>
                         </VBox>
                     </HBox>
                 </AnchorPane>
             </SplitPane>
+        </AnchorPane>
+        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="202.0" prefWidth="1261.0">
+            <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <VBox prefHeight="218.0" prefWidth="1263.0">
+                    <children>
+                          <VBox prefHeight="155.0" prefWidth="114.0">
+                     <HBox prefHeight="100.0" prefWidth="200.0">
+                        <children>
+                                    <Button fx:id="buttonResetScore" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Clear Dart Scores" />
+                                    <Button fx:id="buttonReplay" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Replay" />
+                                    <Button fx:id="buttonTakeImage" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Take Snapshot" />
+
+                                    <Button fx:id="buttonExport" alignment="CENTER" minWidth="120" mnemonicParsing="false" text="Export" />
+                        </children>
+                     </HBox>
+                           <TextArea fx:id="textAreaLog" editable="false" prefHeight="549.0" prefWidth="1245.0" promptText="Log" />
+                          </VBox>
+
+                        <HBox prefHeight="155.0" prefWidth="1245.0">
+                            <children>
+                                <VBox prefHeight="155.0" prefWidth="1128.0">
+                                    <children>
+                                        <HBox prefHeight="22.0" prefWidth="1126.0">
+                                            <children>
+                                                <Label text="gaussian filter:">
+                                                    <HBox.margin>
+                                                        <Insets />
+                                                    </HBox.margin>
+                                                </Label>
+                                                <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="13.0" min="1.0" minorTickCount="2" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="5.0">
+                                                    <HBox.margin>
+                                                        <Insets />
+                                                    </HBox.margin>
+                                                </Slider>
+                                            </children>
+                                        </HBox>
+                                        <HBox prefHeight="28.0" prefWidth="1126.0">
+                                            <children>
+                                                <Label text="subtractor threshold:">
+                                                    <HBox.margin>
+                                                        <Insets />
+                                                    </HBox.margin>
+                                                </Label>
+                                                <Slider fx:id="sliderSubtractorThreshold" blockIncrement="5.0" majorTickUnit="10.0" max="125.0" min="25.0" minorTickCount="5" prefHeight="33.0" prefWidth="317.0" showTickLabels="true" snapToTicks="true" value="75.0">
+                                                    <HBox.margin>
+                                                        <Insets />
+                                                    </HBox.margin>
+                                                </Slider>
+                                            </children>
+                                        </HBox>
+                                        <HBox prefHeight="29.0" prefWidth="1126.0">
+                                            <Label text="morph close">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderCloseIterations" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" min="1.0" minorTickCount="1" prefHeight="33.0" prefWidth="366.0" showTickLabels="true" snapToTicks="true" value="1.0">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </HBox>
+
+                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                            <Label text="morph erode:">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderErodeIterations" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" min="1.0" minorTickCount="1" prefHeight="33.0" prefWidth="360.0" showTickLabels="true" snapToTicks="true" value="1.0">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </HBox>
+                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                            <Label text="morph dilate:">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderDilateIterations" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" min="1.0" minorTickCount="1" prefHeight="33.0" prefWidth="362.0" showTickLabels="true" snapToTicks="true" value="1.0">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                                <VBox prefHeight="163.0" prefWidth="1367.0">
+                                    <HBox prefHeight="22.0" prefWidth="1126.0">
+                                        <children>
+                                            <Label text="aspect ratio low:">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderAspectRatioLow" blockIncrement="0.1" majorTickUnit="1.0" max="5.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="0.5">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </children>
+                                    </HBox>
+                                    <HBox prefHeight="22.0" prefWidth="1126.0">
+                                        <children>
+                                            <Label text="aspect ratio high:">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderAspectRatioHigh" blockIncrement="0.1" majorTickUnit="1.0" max="5.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="2.5">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </children>
+                                    </HBox>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                    <HBox.margin>
+                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                    </HBox.margin>
+                </VBox>
+            </HBox>
         </AnchorPane>
     </SplitPane>
 </AnchorPane>

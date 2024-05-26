@@ -10,6 +10,7 @@ module de.leidenheit.steeldartdetectormvp {
     requires org.kordamp.bootstrapfx.core;
     requires opencv;
     requires lombok;
+    requires java.desktop;
 
     opens de.leidenheit.steeldartdetectormvp to javafx.fxml;
     exports de.leidenheit.steeldartdetectormvp;

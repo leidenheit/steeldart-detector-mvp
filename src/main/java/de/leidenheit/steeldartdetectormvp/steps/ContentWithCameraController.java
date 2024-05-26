@@ -147,15 +147,14 @@ public abstract class ContentWithCameraController {
                         Imgproc.resize(frame, resizedFrame, targetResolutionSize);
 
                         // reduce noise
+                        Mat gauss = new Mat();
+                        Imgproc.GaussianBlur(resizedFrame, gauss, gaussSize, 0);
                         Mat blurredFrame = new Mat();
-                        Imgproc.GaussianBlur(resizedFrame, blurredFrame, gaussSize, 0);
-
+                        Imgproc.bilateralFilter(gauss, blurredFrame, 5, 50, 50);
                         Mat customHandledFrame = customHandleFrame(blurredFrame);
 
                         javafx.scene.image.Image image = FxUtil.matToImage(customHandledFrame);
-                        Platform.runLater(() -> {
-                            imageView.setImage(image);
-                        });
+                        Platform.runLater(() -> imageView.setImage(image));
 
                         resizedFrame.release(); // Release resized frame
                         blurredFrame.release(); // Release blurred frame

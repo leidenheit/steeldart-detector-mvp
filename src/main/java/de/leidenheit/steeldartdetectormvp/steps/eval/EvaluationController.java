@@ -5,10 +5,9 @@ import de.leidenheit.steeldartdetectormvp.detection.*;
 import de.leidenheit.steeldartdetectormvp.steps.ContentWithCameraController;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.util.Pair;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
@@ -18,16 +17,12 @@ import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class EvaluationController extends ContentWithCameraController {
 
-    @FXML
-    public TextField txtScoreFirst;
-    @FXML
-    public TextField txtScoreSecond;
-    @FXML
-    public TextField txtScoreThird;
     @FXML
     public TextArea textAreaLog;
     @FXML
@@ -38,17 +33,57 @@ public class EvaluationController extends ContentWithCameraController {
     public Label labelFeedInfo;
     @FXML
     public Label labelCameraInfo;
+    @FXML
+    public Label labelSuccessRatio;
+    @FXML
+    public Label labelRemainingScore;
+    @FXML
+    public TextField textfieldFirst;
+    @FXML
+    public TextField textfieldSecond;
+    @FXML
+    public TextField textfieldThird;
+    @FXML
+    public ImageView imageViewEvalMask;
+    @FXML
+    public ImageView imageViewArrowTipCenter;
+    @FXML
+    public Slider sliderGaussian;
+    @FXML
+    public Slider sliderSubtractorThreshold;
+    @FXML
+    public Slider sliderCloseIterations;
+    @FXML
+    public Slider sliderErodeIterations;
+    @FXML
+    public Slider sliderDilateIterations;
+    @FXML
+    public Slider sliderAspectRatioLow;
+    @FXML
+    public Slider sliderAspectRatioHigh;
+    @FXML
+    public Button buttonExport;
 
     private BackgroundSubtractorMOG2 subtractor;
     private Mat ref = new Mat();
-    private final int[] scoreArray = new int[3];
+    // TODO introduce type
+    private final int[] scoreArray = new int[]{-1, -1, -1};
     // used to determine unplugging of darts
     private boolean skipUntilDiffZero = false;
+    private List<Point> arrowTips = new ArrayList<>();
+    private int dartThrows = 0;
+    private int falsePositives = 0;
+
+    private Image placeHolder = FxUtil.matToImage(
+            FxUtil.retrieveResourceAsMat("images/placeholder", "placeholder.jpg"));
 
     @Override
     protected void onDetectionTaskFailed() {
         log("Eval Step: Detection task failed");
         ref.release();
+        arrowTips.clear();
+        dartThrows = 0;
+        falsePositives = 0;
         enableControls(true);
     }
 
@@ -56,6 +91,9 @@ public class EvaluationController extends ContentWithCameraController {
     protected void onDetectionTaskCancelled() {
         log("Eval Step: Detection task cancelled");
         ref.release();
+        arrowTips.clear();
+        dartThrows = 0;
+        falsePositives = 0;
         enableControls(true);
     }
 
@@ -63,13 +101,15 @@ public class EvaluationController extends ContentWithCameraController {
     protected void onDetectionTaskSucceeded() {
         log("Eval Step: Detection task succeeded");
         ref.release();
+        arrowTips.clear();
+        dartThrows = 0;
+        falsePositives = 0;
         enableControls(true);
     }
 
     @Override
     protected void onDetectionTaskRunning() {
         log("Eval Step: Detection task running");
-        ref.release();
         enableControls(false);
     }
 
@@ -83,10 +123,38 @@ public class EvaluationController extends ContentWithCameraController {
         log("Eval Step: Initialize evaluation");
 
         // handlers
-        buttonResetScore.setOnAction(event -> resetScore());
-        buttonReplay.setOnAction(event -> initialize());
+        buttonResetScore.setOnAction(event -> {
+            dartThrows += 3;
+            falsePositives += 3;
+            resetScore();
+        });
+        buttonReplay.setOnAction(event -> {
+            arrowTips.clear();
+            dartThrows = 0;
+            falsePositives = 0;
+
+            initialize();
+        });
+        buttonExport.setOnAction(event -> {
+            try {
+                if (DartSingleton.getInstance().serialize("dart_conf.ldh")) {
+                    var alert = new Alert(Alert.AlertType.INFORMATION, "Successfully Exported", ButtonType.OK);
+                    alert.show();
+                }
+            } catch (LeidenheitException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         resetScore();
+
+        sliderGaussian.setValue(DartSingleton.getInstance().vidGaussian);
+        sliderCloseIterations.setValue(DartSingleton.getInstance().vidCloseIterations);
+        sliderErodeIterations.setValue(DartSingleton.getInstance().vidErodeIterations);
+        sliderDilateIterations.setValue(DartSingleton.getInstance().vidDilateIterations);
+        sliderSubtractorThreshold.setValue(DartSingleton.getInstance().vidSubtractorThreshold);
+        sliderAspectRatioLow.setValue(DartSingleton.getInstance().vidAspectRatioLow);
+        sliderAspectRatioHigh.setValue(DartSingleton.getInstance().vidAspectRatioHigh);
 
         // reset skip flag
         skipUntilDiffZero = false;
@@ -130,16 +198,23 @@ public class EvaluationController extends ContentWithCameraController {
             if (CamSingleton.getInstance().getVideoCapture().read(nextFrame)) {
                 resizeAndGaussFrame(nextFrame, calculatedScaleFactor, DartSingleton.getInstance().vidGaussian);
 
+                Mat filtered = new Mat();
+                Imgproc.bilateralFilter(nextFrame, filtered, 5, 50, 50);
+                nextFrame = filtered;
+
                 subtractor.apply(nextFrame, nextMask);
                 int countNonZeroPixels = Core.countNonZero(nextMask);
 
+
+                // FIXME: unplugging detection does not work properly; consider using a motion detection and count the duration in order to define a threshold determining the actual unplugging
+
                 // most likely in motion
-                if (Detection.hasSignificantChanges(nextMask, 10_000, 30_000)) {
+                if (Detection.hasSignificantChanges(nextMask, 10_000, 15_000)) {
                     log("Eval Step: [frame={0}] Seems to be in motion (diff={1}); ignored", i, countNonZeroPixels);
                     continue;
                 }
                 // most likely unplugging
-                if (Detection.hasSignificantChanges(nextMask, 30_001, Integer.MAX_VALUE)) {
+                if (Detection.hasSignificantChanges(nextMask, 15_001, Integer.MAX_VALUE)) {
                     log("Eval Step: [frame={0}] Seems to be unplugging darts (diff={1})", i, countNonZeroPixels);
                     log("Skipping due to zero difference threshold");
                     // waits in the main loop for the frame to be reached before doing any other evaluation
@@ -148,7 +223,7 @@ public class EvaluationController extends ContentWithCameraController {
                     return;
                 }
                 // evaluation of candidate
-                boolean significantChanges = Detection.hasSignificantChanges(nextMask, 0, 50);
+                boolean significantChanges = Detection.hasSignificantChanges(nextMask, 0, 10);
                 if (!maskToEval.empty() && significantChanges) {
                     // merge found dart contours into a single one
                     MatOfPoint mergedContour = morphMergeContours(maskToEval);
@@ -162,8 +237,8 @@ public class EvaluationController extends ContentWithCameraController {
                     Rect boundingRect = Imgproc.boundingRect(mergedContour);
                     // calculate aspect ratio
                     double aspectRatio = (double) boundingRect.width / boundingRect.height;
-                    // check if aspect ratio falls within desired range (45° to 90°)
-                    if (aspectRatio >= 0.25 && aspectRatio <= 2.0) {
+                    // check if aspect ratio falls within desired range
+                    if (aspectRatio >= sliderAspectRatioLow.getValue() && aspectRatio <= sliderAspectRatioHigh.getValue()) {
                         // evaluation of dart arrow
                         log("Dart Arrow Detected: start evaluation at frame {0} with aspect ratio {1}", framePos, aspectRatio);
                         Pair<Pair<Integer, Mat>, Point[]> scoreAndDartTipBoundingBoxPair = evaluateDartContour(nextFrame, mergedContour);
@@ -189,7 +264,9 @@ public class EvaluationController extends ContentWithCameraController {
                         } catch (LeidenheitException e) {
                             throw new RuntimeException(e);
                         }
-                        applyDebugDetails(nextFrame, scoreAndDartTipBoundingBoxPair);
+                        applyDebugDetails(nextFrame, maskToEval, scoreAndDartTipBoundingBoxPair);
+                        arrowTips.add(scoreAndDartTipBoundingBoxPair.getValue()[0]);
+                        dartThrows++;
                     } else {
                         log("Skipping due to aspect ratio threshold");
                         maskToEval.release();
@@ -214,7 +291,7 @@ public class EvaluationController extends ContentWithCameraController {
         return res;
     }
 
-    private void applyDebugDetails(final Mat frame, final Pair<Pair<Integer, Mat>, Point[]> scoreAndDartTipBoundingBoxPair) {
+    private void applyDebugDetails(final Mat frame, final Mat maskToEval, final Pair<Pair<Integer, Mat>, Point[]> scoreAndDartTipBoundingBoxPair) {
         // draw bounding rectangle
         Mat image = frame.clone();
         try {
@@ -226,16 +303,18 @@ public class EvaluationController extends ContentWithCameraController {
                         scoreAndDartTipBoundingBoxPair.getValue()[1], // tl
                         scoreAndDartTipBoundingBoxPair.getValue()[2], // br
                         new Scalar(125, 125, 20), 2);
-                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[3], 3, new Scalar(0, 255, 0), -1);
-                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[0], 3, new Scalar(0, 0, 255), -1);
+                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[3], 2, new Scalar(0, 255, 100), -1);
+                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[0], 2, new Scalar(0, 100, 255), -1);
 
                 Mat finalImage = image.clone();
                 image.release();
                 Platform.runLater(() -> {
                     imageView.setImage(FxUtil.matToImage(finalImage));
+                    imageViewEvalMask.setImage(FxUtil.matToImage(maskToEval));
+                    imageViewArrowTipCenter.setImage(FxUtil.matToImage(finalImage));
                     finalImage.release();
                 });
-                Thread.sleep(500);
+                Thread.sleep(50);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -248,20 +327,24 @@ public class EvaluationController extends ContentWithCameraController {
                 new Point(-1, -1),
                 DartSingleton.getInstance().vidCloseIterations);
         Imgproc.morphologyEx(maskToEval, maskToEval, Imgproc.MORPH_DILATE,
-                Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5)),
+                Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)),
                 new Point(-1, -1),
                 DartSingleton.getInstance().vidDilateIterations);
         Imgproc.morphologyEx(maskToEval, maskToEval, Imgproc.MORPH_ERODE,
-                Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5)),
+                Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2, 2)),
                 new Point(-1, -1),
                 DartSingleton.getInstance().vidErodeIterations);
 
-        return Detection.extractMergedContour(maskToEval, DartSingleton.getInstance().vidMinContourArea);
+        // TODO consider configurable contour area threshold
+        return Detection.extractMergedContour(maskToEval, 50);
     }
 
     private Pair<Pair<Integer, Mat>, Point[]> evaluateDartContour(final Mat frame, final MatOfPoint dartContour) {
         MatOfPoint convexHull = Detection.findConvexHull(dartContour);
-        Point[] tipAndBB = Detection.findArrowTip(convexHull);
+        Pair<Double, Point[]> res = Detection.findArrowTip(dartContour, convexHull, frame);
+        Point[] tipAndBB = res.getValue();
+
+        // TODO introduce type
         Pair<Integer, Mat> scoreMaskPair = new Pair<>(0, new Mat());
         try {
             if (!Detection.pointIntersectsMask(tipAndBB[0], MaskSingleton.getInstance().dartboardMask)) {
@@ -298,6 +381,23 @@ public class EvaluationController extends ContentWithCameraController {
 
     @Override
     protected Mat customHandleFrame(final Mat frame) {
+        // read values from controls
+        final var gaussian = (int) sliderGaussian.getValue();
+        final var closeIterations = (int) sliderCloseIterations.getValue();
+        final var erodeIterations = (int) sliderErodeIterations.getValue();
+        final var dilateIterations = (int) sliderDilateIterations.getValue();
+        final var subtractorThreshold = (int) sliderSubtractorThreshold.getValue();
+        final var aspectRatioLow = (int) sliderAspectRatioLow.getValue();
+        final var aspectRatioHigh = (int) sliderAspectRatioHigh.getValue();
+        DartSingleton.getInstance().vidGaussian = gaussian;
+        DartSingleton.getInstance().vidErodeIterations = erodeIterations;
+        DartSingleton.getInstance().vidCloseIterations = closeIterations;
+        DartSingleton.getInstance().vidDilateIterations = dilateIterations;
+        DartSingleton.getInstance().vidSubtractorThreshold = subtractorThreshold;
+        DartSingleton.getInstance().vidAspectRatioLow = aspectRatioLow;
+        DartSingleton.getInstance().vidAspectRatioHigh = aspectRatioHigh;
+
+
         tryApplyReferenceImage(frame);
         if (shouldSkipFrame()) return frame;
 
@@ -318,11 +418,18 @@ public class EvaluationController extends ContentWithCameraController {
                 // nested loop deep evaluation
                 handleDeepFrameEvaluation(framePosToStart, framePosToEnd);
             }
+            drawArrowTips(frame);
         } finally {
             mask.release();
             updateUI();
         }
         return frame.clone();
+    }
+
+    private void drawArrowTips(final Mat frame) {
+        for (final Point hit : this.arrowTips) {
+            Imgproc.circle(frame, hit, 3, new Scalar(255, 0, 255), -1, Imgproc.LINE_AA);
+        }
     }
 
     private void updateUI() {
@@ -340,6 +447,14 @@ public class EvaluationController extends ContentWithCameraController {
                 CamSingleton.getInstance().getSelectedCameraIndex(),
                 resolutionWidth * calculatedScaleFactor,
                 resolutionHeight * calculatedScaleFactor));
+
+        double successRatio = 100d - calculateFailRatio(dartThrows, falsePositives);
+        labelSuccessRatio.setText(MessageFormat.format("Success Ratio: {0}% ({1}:{2})", successRatio, falsePositives, dartThrows));
+    }
+
+    private double calculateFailRatio(final int dartThrows, final int falsePositives) {
+        if (dartThrows <= 0 || falsePositives <= 0) return 0;
+        return (double) (falsePositives * 100) / dartThrows;
     }
 
     @Override
@@ -359,7 +474,7 @@ public class EvaluationController extends ContentWithCameraController {
     }
 
     private void enableControls(boolean enabled) {
-        buttonReplay.setDisable(!enabled);
+        // ignored
     }
 
     private void updateLogInUI() {
@@ -368,14 +483,32 @@ public class EvaluationController extends ContentWithCameraController {
     }
 
     private void updateScoreInUI() {
-        txtScoreFirst.setText(scoreArray[0] >= 0 ? String.valueOf(scoreArray[0]) : "-");
-        txtScoreSecond.setText(scoreArray[1] >= 0 ? String.valueOf(scoreArray[1]) : "-");
-        txtScoreThird.setText(scoreArray[2] >= 0 ? String.valueOf(scoreArray[2]) : "-");
+        textfieldFirst.setText(scoreArray[0] >= 0 ? String.valueOf(scoreArray[0]) : "-");
+        textfieldSecond.setText(scoreArray[1] >= 0 ? String.valueOf(scoreArray[1]) : "-");
+        textfieldThird.setText(scoreArray[2] >= 0 ? String.valueOf(scoreArray[2]) : "-");
+
+        int score = 0;
+        for (int i = 0; i < scoreArray.length; i++) {
+            score += Math.max(scoreArray[i], 0);
+        }
+        labelRemainingScore.setText(String.valueOf(score));
     }
 
     private void resetScore() {
         log("Resetting score");
         Arrays.fill(scoreArray, -1);
-        Platform.runLater(this::updateUI);
+        this.arrowTips.clear();
+
+        Platform.runLater(() -> {
+            imageViewArrowTipCenter.setImage(placeHolder);
+            imageViewEvalMask.setImage(placeHolder);
+
+            updateUI();
+        });
+    }
+
+    public void markAsFalsePositive() {
+        falsePositives++;
+        log("Marked as false positive");
     }
 }

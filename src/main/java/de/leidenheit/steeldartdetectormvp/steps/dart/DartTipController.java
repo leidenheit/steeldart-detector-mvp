@@ -7,6 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
+import javafx.util.Pair;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.BackgroundSubtractorMOG2;
@@ -101,7 +102,7 @@ public class DartTipController extends ContentWithCameraController {
                 new Point(-1, -1),
                 DartSingleton.getInstance().vidErodeIterations);
 
-        MatOfPoint mergedContour = Detection.extractMergedContour(mask, DartSingleton.getInstance().vidMinContourArea); // image
+        MatOfPoint mergedContour = Detection.extractMergedContour(mask, 50); // image
         if (Imgproc.contourArea(mergedContour) > DartSingleton.getInstance().vidMaxMergedContourArea) { // video
             return frame.clone();
         }
@@ -109,15 +110,8 @@ public class DartTipController extends ContentWithCameraController {
         MatOfPoint convexHull = Detection.findConvexHull(mergedContour);
         Imgproc.drawContours(frame, List.of(mergedContour), -1, new Scalar(240, 16, 255), 1);
 
-        Point[] tipAndBB = Detection.findArrowTip(convexHull);
-        try {
-            if (!Detection.pointIntersectsMask(tipAndBB[0], MaskSingleton.getInstance().dartboardMask)) {
-                log("Ignored since not in dartboard mask");
-                return frame.clone();
-            }
-        } catch (LeidenheitException e) {
-            throw new RuntimeException(e);
-        }
+        Pair<Double, Point[]> res = Detection.findArrowTip(mergedContour, convexHull, frame);
+        Point[] tipAndBB = res.getValue();
         Imgproc.rectangle(frame, tipAndBB[1], tipAndBB[2], new Scalar(0, 255, 0), 1);
         Imgproc.drawMarker(frame, tipAndBB[0], new Scalar(100, 100, 254), Imgproc.MARKER_STAR, 50, 1);
 

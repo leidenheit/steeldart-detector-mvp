@@ -101,7 +101,7 @@ public class ContentMaskSegmentsController extends ContentController {
             MaskSingleton.getInstance().segments = MaskSingleton.getInstance().baseImageBGR.clone();
             MaskSingleton.getInstance().valueAngleRanges = Detection.determineDartboardSegments(
                     pointCenter,
-                    MaskSingleton.getInstance().baseImageGray,
+                    MaskSingleton.getInstance().baseImageBGR,
                     MaskSingleton.getInstance().segments,
                     MaskSingleton.getInstance().innerBullMask,
                     MaskSingleton.getInstance().doubleMask,
