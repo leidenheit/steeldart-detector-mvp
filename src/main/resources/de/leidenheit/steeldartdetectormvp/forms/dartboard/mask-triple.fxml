@@ -7,7 +7,7 @@
 
 <AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.dartboard.ContentMaskTripleController">
     <children>
-        <SplitPane centerShape="false" dividerPositions="0.3548387096774194" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <SplitPane centerShape="false" dividerPositions="0.06905829596412558" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="274.0" prefWidth="1261.0">
                     <children>
@@ -15,10 +15,9 @@
                             <children>
                                 <VBox prefHeight="261.0" prefWidth="1274.0">
                                     <children>
-                                        <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false"
-                                                text="Reset Params">
+                                        <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false" text="Reset Params">
                                             <VBox.margin>
-                                                <Insets bottom="8.0" right="8.0" top="8.0"/>
+                                                <Insets bottom="8.0" right="8.0" top="8.0" />
                                             </VBox.margin>
                                         </Button>
                                     </children>

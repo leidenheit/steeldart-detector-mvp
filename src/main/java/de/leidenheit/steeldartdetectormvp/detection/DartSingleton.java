@@ -48,6 +48,9 @@ public class DartSingleton implements Serializable {
     public int vidMaxMergedContourArea = 15_000;
     public double vidAspectRatioLow = 0;
     public double vidAspectRatioHigh = 3;
+    public double vidUnpluggingThreshold = 15_000;
+    // TODO add max merged contour area
+
     private DartSingleton() throws URISyntaxException {
         // hide constructor
         errorImage = FxUtil.retrieveResourceAsMat("images/placeholder", "error.jpg");
@@ -81,6 +84,7 @@ public class DartSingleton implements Serializable {
                     oos.writeInt(vidMaxMergedContourArea);
                     oos.writeDouble(vidAspectRatioLow);
                     oos.writeDouble(vidAspectRatioHigh);
+                    oos.writeDouble(vidUnpluggingThreshold);
 
                     return true;
                 }
@@ -107,6 +111,7 @@ public class DartSingleton implements Serializable {
                 vidMaxMergedContourArea = ois.readInt();
                 vidAspectRatioLow = ois.readDouble();
                 vidAspectRatioHigh = ois.readDouble();
+                vidUnpluggingThreshold = ois.readDouble();
 
                 return true;
             }

@@ -432,7 +432,8 @@ public class Detection {
             final int cannyThreshold2,
             final int houghThreshold,
             final int houghMinLineLength,
-            final int houghMaxGap
+            final int houghMaxGap,
+            final Point clickPointOfSegment6
     ) throws LeidenheitException {
         try {
             List<List<Point>> lineCandidates = Detection.findLineCandidatesByCannyAndHoughLinesP(
@@ -470,7 +471,7 @@ public class Detection {
             //        }
             ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
             if (segmentLines.size() == 20) {
-                valueAngleRanges = associateValueAngleRanges(segmentLines);
+                valueAngleRanges = associateValueAngleRanges(center, segmentLines, clickPointOfSegment6);
                 List<Map.Entry<ValueAngleRanges.ValueRange, Integer>> list = new ArrayList<>(valueAngleRanges.getValueAngleRangeMap().entrySet().stream().toList());
                 list.sort(Comparator.comparingDouble(valueRangeIntegerEntry ->
                         valueRangeIntegerEntry.getKey().minValue()));
@@ -488,6 +489,14 @@ public class Detection {
             for (Line segmentLine : segmentLines) {
                 Imgproc.line(segments, segmentLine.getCenter(), segmentLine.getLinePoint(), lineColor, 1);
             }
+            valueAngleRanges.getValueAngleRangeMap().forEach((valueRange, integer) -> {
+                var segment = ValueAngleRanges.getInstance().findValueByAngle(valueRange.maxValue()-0.1d);
+                double estimatedX = center.x + 250 * Math.cos(Math.toRadians(valueRange.maxValue()-(18*0.33)));
+                double estimatedY = center.y + 250 * Math.sin(Math.toRadians(valueRange.maxValue()-(18*0.33)));
+                Point point = new Point(estimatedX, estimatedY);
+                Imgproc.putText(segments, String.valueOf(segment), point, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, lineColor, 2);
+            });
+
             //        System.out.printf("valueAngleRanges: %s\n", valueAngleRanges.getValueAngleRangeMap().keySet().size());
             //        debugShowImage(considerableLines, "considerable lines");
             return valueAngleRanges;
@@ -624,22 +633,45 @@ public class Detection {
         return angleCenterToPoint;
     }
 
-    private static ValueAngleRanges associateValueAngleRanges(List<Line> segmentLines) {
-        ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
-        for (int i = 0; i < valueAngleRanges.segmentValueIndexes.size() - 1; i++) {
-            // build up polar coordinate values for angle ranges
-            if (i == 0) {
-                // add first
-                valueAngleRanges.putValueForAngleRange(i, 0, segmentLines.get(0).getAngle());
-            } else {
-                valueAngleRanges.putValueForAngleRange(i, segmentLines.get(i - 1).getAngle(), segmentLines.get(i).getAngle());
-            }
-            if (i == segmentLines.size() - 1) {
-                // add last
-                valueAngleRanges.putValueForAngleRange(i + 1, segmentLines.get(i).getAngle(), 360.0d);
-            }
+    private static ValueAngleRanges associateValueAngleRanges(final Point center, final List<Line> segmentLines, final Point clickPointOfSegmentToStartWith) throws LeidenheitException {
+        ValueAngleRanges result = ValueAngleRanges.getInstance();
+        result.getValueAngleRangeMap().clear();
+        List<Integer> segmentIndices = ValueAngleRanges.getInstance().segmentValueIndexes;
+
+        // find the position of segment 6 (i)
+        var angleOfSegment6 = calculateAngle(center, clickPointOfSegmentToStartWith);
+
+        System.out.printf("associateValueAngleRanges2: center=%s, segmentLines=%s, angleOfSegment=%.2f%n", center, segmentLines.size(), angleOfSegment6);
+
+        var sorted = segmentLines.stream()
+                .sorted(Comparator.comparingDouble(Line::getAngle)).toList();
+
+        Line lineUpperBoundary = sorted.stream()
+                .filter(line -> line.getAngle() >= angleOfSegment6 || (360d-angleOfSegment6) <= 18)
+                .findFirst()
+                .orElseThrow();
+        var lastLineIndex = segmentLines.indexOf(lineUpperBoundary);
+        Line lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
+        System.out.printf("determine clicked segment 6: lastLineIndex=%s low=%.2f, high=%.2f%n", lastLineIndex, lineLowerBoundary.getAngle(), lineUpperBoundary.getAngle());
+        // add segment 6
+        result.putValueForAngleRange(
+                0,
+                lineLowerBoundary.getAngle(),
+                lineUpperBoundary.getAngle());
+
+        // iterate other indices
+        for (int i = 1; i < segmentIndices.size(); i++) {
+            lineUpperBoundary = sorted.get((lastLineIndex + 1) % sorted.size());
+            lastLineIndex = sorted.indexOf(lineUpperBoundary);
+            lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
+            System.out.printf("auto determine segment: segmentIndex=%s, segment=%s, lastLineIndex=%s, low=%.2f, high=%.2f%n", i, segmentIndices.get(i), lastLineIndex, lineLowerBoundary.getAngle(), lineUpperBoundary.getAngle());
+            // add segment
+            result.putValueForAngleRange(
+                    i,
+                    lineLowerBoundary.getAngle(),
+                    lineUpperBoundary.getAngle());
         }
-        return valueAngleRanges;
+        return result;
     }
 
     /**

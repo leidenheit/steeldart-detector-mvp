@@ -62,6 +62,8 @@ public class EvaluationController extends ContentWithCameraController {
     @FXML
     public Slider sliderAspectRatioHigh;
     @FXML
+    public Slider sliderUnpluggingThreshold;
+    @FXML
     public Button buttonExport;
 
     private BackgroundSubtractorMOG2 subtractor;
@@ -155,6 +157,7 @@ public class EvaluationController extends ContentWithCameraController {
         sliderSubtractorThreshold.setValue(DartSingleton.getInstance().vidSubtractorThreshold);
         sliderAspectRatioLow.setValue(DartSingleton.getInstance().vidAspectRatioLow);
         sliderAspectRatioHigh.setValue(DartSingleton.getInstance().vidAspectRatioHigh);
+        sliderUnpluggingThreshold.setValue(DartSingleton.getInstance().vidUnpluggingThreshold);
 
         // reset skip flag
         skipUntilDiffZero = false;
@@ -193,6 +196,9 @@ public class EvaluationController extends ContentWithCameraController {
         Mat nextFrame = new Mat();
         Mat nextMask = new Mat();
         Mat maskToEval = new Mat();
+
+        int unpluggingThreshold = (int) DartSingleton.getInstance().vidUnpluggingThreshold * 1000;
+
         // evaluate the next frames in order to find the one that fits the evaluation requirements
         for (int i = framePosFrom; i < framePosTo; i++) {
             if (CamSingleton.getInstance().getVideoCapture().read(nextFrame)) {
@@ -205,16 +211,13 @@ public class EvaluationController extends ContentWithCameraController {
                 subtractor.apply(nextFrame, nextMask);
                 int countNonZeroPixels = Core.countNonZero(nextMask);
 
-
-                // FIXME: unplugging detection does not work properly; consider using a motion detection and count the duration in order to define a threshold determining the actual unplugging
-
                 // most likely in motion
-                if (Detection.hasSignificantChanges(nextMask, 10_000, 15_000)) {
+                if (Detection.hasSignificantChanges(nextMask, 10_000, unpluggingThreshold)) {
                     log("Eval Step: [frame={0}] Seems to be in motion (diff={1}); ignored", i, countNonZeroPixels);
                     continue;
                 }
                 // most likely unplugging
-                if (Detection.hasSignificantChanges(nextMask, 15_001, Integer.MAX_VALUE)) {
+                if (Detection.hasSignificantChanges(nextMask, unpluggingThreshold, Integer.MAX_VALUE)) {
                     log("Eval Step: [frame={0}] Seems to be unplugging darts (diff={1})", i, countNonZeroPixels);
                     log("Skipping due to zero difference threshold");
                     // waits in the main loop for the frame to be reached before doing any other evaluation
@@ -389,6 +392,7 @@ public class EvaluationController extends ContentWithCameraController {
         final var subtractorThreshold = (int) sliderSubtractorThreshold.getValue();
         final var aspectRatioLow = (int) sliderAspectRatioLow.getValue();
         final var aspectRatioHigh = (int) sliderAspectRatioHigh.getValue();
+        final var unpluggingThreshold = (int) sliderUnpluggingThreshold.getValue();
         DartSingleton.getInstance().vidGaussian = gaussian;
         DartSingleton.getInstance().vidErodeIterations = erodeIterations;
         DartSingleton.getInstance().vidCloseIterations = closeIterations;
@@ -396,7 +400,7 @@ public class EvaluationController extends ContentWithCameraController {
         DartSingleton.getInstance().vidSubtractorThreshold = subtractorThreshold;
         DartSingleton.getInstance().vidAspectRatioLow = aspectRatioLow;
         DartSingleton.getInstance().vidAspectRatioHigh = aspectRatioHigh;
-
+        DartSingleton.getInstance().vidUnpluggingThreshold = unpluggingThreshold;
 
         tryApplyReferenceImage(frame);
         if (shouldSkipFrame()) return frame;

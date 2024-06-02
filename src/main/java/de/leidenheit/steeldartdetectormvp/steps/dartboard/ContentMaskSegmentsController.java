@@ -7,6 +7,8 @@ import de.leidenheit.steeldartdetectormvp.detection.MaskSingleton;
 import de.leidenheit.steeldartdetectormvp.steps.ContentController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Slider;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 public class ContentMaskSegmentsController extends ContentController {
 
@@ -99,9 +101,13 @@ public class ContentMaskSegmentsController extends ContentController {
         try {
             final var pointCenter = Detection.findCircleCenter(MaskSingleton.getInstance().baseImageBGR, MaskSingleton.getInstance().innerBullMask);
             MaskSingleton.getInstance().segments = MaskSingleton.getInstance().baseImageBGR.clone();
+
+            Mat bilateral = new Mat();
+            Imgproc.bilateralFilter(MaskSingleton.getInstance().baseImageBGR, bilateral, 5, 50, 50);
+
             MaskSingleton.getInstance().valueAngleRanges = Detection.determineDartboardSegments(
                     pointCenter,
-                    MaskSingleton.getInstance().baseImageBGR,
+                    bilateral,
                     MaskSingleton.getInstance().segments,
                     MaskSingleton.getInstance().innerBullMask,
                     MaskSingleton.getInstance().doubleMask,
@@ -114,7 +120,8 @@ public class ContentMaskSegmentsController extends ContentController {
                     (int) cannyThres2,
                     (int) houghThres,
                     (int) houghMinLineLength,
-                    (int) houghMaxLineGap
+                    (int) houghMaxLineGap,
+                    MaskSingleton.getInstance().coordinateOfSegment6
             );
 
             imageViewSource.setImage(FxUtil.matToImage(MaskSingleton.getInstance().baseImageBGR));

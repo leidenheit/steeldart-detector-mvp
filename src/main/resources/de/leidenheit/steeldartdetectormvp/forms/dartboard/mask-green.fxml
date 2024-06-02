@@ -5,102 +5,83 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;"
-            xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="de.leidenheit.steeldartdetectormvp.steps.dartboard.ContentMaskGreenController">
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.dartboard.ContentMaskGreenController">
     <children>
-        <SplitPane centerShape="false" dividerPositions="0.3548387096774194" orientation="VERTICAL" prefHeight="746.0"
-                   prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <SplitPane centerShape="false" dividerPositions="0.21165919282511214" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <items>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="274.0" prefWidth="1261.0">
                     <children>
-                        <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0"
-                              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <children>
                                 <VBox prefHeight="188.0" prefWidth="1260.6666666666667">
                                     <children>
-                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                        <HBox prefHeight="40.0" prefWidth="625.0">
                                             <Label text="threshold:">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderThreshold" blockIncrement="1.0" max="255.0"
-                                                    minorTickCount="5" prefHeight="38.0" prefWidth="500.0"
-                                                    showTickLabels="true" showTickMarks="true" value="16.0">
+                                            <Slider fx:id="sliderThreshold" blockIncrement="1.0" max="255.0" minorTickCount="5" prefHeight="38.0" prefWidth="500.0" showTickLabels="true" showTickMarks="true" value="16.0">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
-                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                        <HBox prefHeight="37.0" prefWidth="625.0">
                                             <Label text="gauss filter:">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0"
-                                                    max="21.0" min="1.0" minorTickCount="2" prefWidth="500.0"
-                                                    showTickLabels="true" snapToTicks="true" value="1.0">
+                                            <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="21.0" min="1.0" minorTickCount="2" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="1.0">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
-                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                        <HBox prefHeight="41.0" prefWidth="625.0">
                                             <Label text="morph erode:">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderErodeIterations" blockIncrement="1.0"
-                                                    majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1"
-                                                    prefWidth="500.0" showTickLabels="true" snapToTicks="true"
-                                                    value="1.0">
+                                            <Slider fx:id="sliderErodeIterations" blockIncrement="1.0" majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="1.0">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
-                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                        <HBox prefHeight="31.0" prefWidth="625.0">
                                             <Label text="morph dilate:">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderDilateIterations" blockIncrement="1.0"
-                                                    majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1"
-                                                    prefWidth="500.0" showTickLabels="true" snapToTicks="true"
-                                                    value="2.0">
+                                            <Slider fx:id="sliderDilateIterations" blockIncrement="1.0" majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="2.0">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
                                     </children>
                                 </VBox>
-                                <VBox prefHeight="261.0" prefWidth="1274.0">
+                                <VBox prefHeight="260.0" prefWidth="1358.0">
                                     <children>
-                                        <HBox prefHeight="100.0" prefWidth="200.0">
+                                        <HBox prefHeight="33.0" prefWidth="383.0">
                                             <Label text="morph close:">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderCloseIterations" blockIncrement="1.0"
-                                                    majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1"
-                                                    prefWidth="500.0" showTickLabels="true" snapToTicks="true"
-                                                    value="1.0">
+                                            <Slider fx:id="sliderCloseIterations" blockIncrement="1.0" majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="1.0">
                                                 <HBox.margin>
-                                                    <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                    <Insets />
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
-                                        <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false"
-                                                text="Reset Params">
+                                        <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false" text="Reset Params">
                                             <VBox.margin>
-                                                <Insets bottom="8.0" right="8.0" top="8.0"/>
+                                                <Insets bottom="8.0" right="8.0" top="8.0" />
                                             </VBox.margin>
                                         </Button>
                                     </children>
@@ -111,29 +92,23 @@
                 </AnchorPane>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="523.0" prefWidth="1261.0">
                     <children>
-                        <SplitPane dividerPositions="0.49947005829358765" layoutX="274.0" layoutY="134.0"
-                                   prefHeight="548.6666666666666" prefWidth="1260.6666666666667"
-                                   AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <SplitPane dividerPositions="0.49947005829358765" layoutX="274.0" layoutY="134.0" prefHeight="548.6666666666666" prefWidth="1260.6666666666667" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <items>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                                     <children>
-                                        <VBox prefHeight="546.0" prefWidth="625.3333333333334"
-                                              AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <VBox prefHeight="546.0" prefWidth="625.3333333333334" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                             <children>
                                                 <Label text="Source Image">
                                                     <VBox.margin>
-                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                                                     </VBox.margin>
                                                 </Label>
-                                                <ImageView fx:id="imageViewSource" fitHeight="440.0" fitWidth="600.0"
-                                                           pickOnBounds="true" preserveRatio="true">
+                                                <ImageView fx:id="imageViewSource" fitHeight="440.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true">
                                                     <VBox.margin>
-                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                                                     </VBox.margin>
                                                     <viewport>
-                                                        <Rectangle2D/>
+                                                        <Rectangle2D />
                                                     </viewport>
                                                 </ImageView>
                                             </children>
@@ -142,19 +117,16 @@
                                 </AnchorPane>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                                     <children>
-                                        <VBox prefHeight="546.0" prefWidth="626.6666666666666"
-                                              AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                              AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <VBox prefHeight="546.0" prefWidth="626.6666666666666" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                             <children>
                                                 <Label text="Computed Image">
                                                     <VBox.margin>
-                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                                                     </VBox.margin>
                                                 </Label>
-                                                <ImageView fx:id="imageViewComputed" fitHeight="440.0" fitWidth="600.0"
-                                                           pickOnBounds="true" preserveRatio="true">
+                                                <ImageView fx:id="imageViewComputed" fitHeight="440.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true">
                                                     <VBox.margin>
-                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0"/>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
                                                     </VBox.margin>
                                                 </ImageView>
                                             </children>

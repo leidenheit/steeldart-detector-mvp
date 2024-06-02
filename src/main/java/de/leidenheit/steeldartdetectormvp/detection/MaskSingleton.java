@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 
 import java.io.FileInputStream;
@@ -85,6 +86,9 @@ public class MaskSingleton implements Serializable {
 
     // ignored by serialization
     private transient final List<String> debugList = new ArrayList<>();
+
+    // ignored by serialization
+    public transient Point coordinateOfSegment6 = new Point(0, 0);
 
     private MaskSingleton() throws URISyntaxException {
         // hide constructor

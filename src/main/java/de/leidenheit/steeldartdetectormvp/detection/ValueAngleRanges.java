@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,12 +13,11 @@ import java.util.Map;
 @Setter
 public class ValueAngleRanges implements Serializable {
 
-    // FIXME must hold center which the values belongs to
 
     private static ValueAngleRanges instance;
 
     public final List<Integer> segmentValueIndexes = List.of(
-            6, // twice since dartboard does not start vertically; 0° to x° and x° to 360°
+            6,
             10,
             15,
             2,
@@ -36,8 +36,7 @@ public class ValueAngleRanges implements Serializable {
             1,
             18,
             4,
-            13,
-            6 // twice since dartboard does not start vertically; 0° to x° and x° to 360°
+            13
     );
 
     private final HashMap<ValueRange, Integer> valueAngleRangeMap = new HashMap<>();
@@ -59,14 +58,25 @@ public class ValueAngleRanges implements Serializable {
 
     public Integer findValueByAngle(final double angle) throws RuntimeException {
         for (Map.Entry<ValueRange, Integer> entry : valueAngleRangeMap.entrySet()) {
-            final var inRange = entry.getKey().minValue <= angle
-                    && entry.getKey().maxValue >= angle;
+            var angleToUse = (angle + 360) % 360;
+            var min = (entry.getKey().minValue + 360) % 360;
+            var max = (entry.getKey().maxValue + 360) % 360;
+
+            final var inRange = min <= max ?
+                    angleToUse >= min && angleToUse <= max
+                    : angleToUse >= min || angleToUse <= max;
             if (inRange) {
                 return entry.getValue();
             }
         }
-        // TODO throw new RuntimeException(String.format("Cannot find angle %s in range set", angle));
-        return null;
+        var sorted = valueAngleRangeMap.entrySet().stream()
+                .sorted(Comparator.comparingDouble(value -> value.getKey().maxValue))
+                .toList();
+        var lastEntry = sorted.get(sorted.size()-1);
+        if (lastEntry == null) {
+            throw new RuntimeException(String.format("Cannot find angle %s in range set", angle));
+        }
+        return lastEntry.getValue();
     }
 
     public record ValueRange(double minValue, double maxValue) implements Serializable, Comparable<ValueRange> {

@@ -26,7 +26,7 @@
                                     </Label>
                                     <Label fx:id="labelRemainingScore" alignment="CENTER" prefHeight="103.0" prefWidth="400.0" text="not implemented">
                                         <font>
-                                            <Font name="System Bold" size="80.0" />
+                                            <Font name="System Bold" size="96.0" />
                                         </font>
                                         <VBox.margin>
                                             <Insets left="8.0" right="8.0" />
@@ -238,6 +238,20 @@
                                                 </HBox.margin>
                                             </Label>
                                             <Slider fx:id="sliderAspectRatioHigh" blockIncrement="0.1" majorTickUnit="1.0" max="5.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="2.5">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Slider>
+                                        </children>
+                                    </HBox>
+                                    <HBox prefHeight="22.0" prefWidth="1126.0">
+                                        <children>
+                                            <Label text="unplugging threshold (x1k):">
+                                                <HBox.margin>
+                                                    <Insets />
+                                                </HBox.margin>
+                                            </Label>
+                                            <Slider fx:id="sliderUnpluggingThreshold" blockIncrement="1" majorTickUnit="1.0" max="50" min="10" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="15">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
