@@ -110,7 +110,7 @@ public class DartTipController extends ContentWithCameraController {
         MatOfPoint convexHull = Detection.findConvexHull(mergedContour);
         Imgproc.drawContours(frame, List.of(mergedContour), -1, new Scalar(240, 16, 255), 1);
 
-        Pair<Double, Point[]> res = Detection.findArrowTip(mergedContour, convexHull, frame);
+        Pair<Double, Point[]> res = Detection.findArrowTip(frame, convexHull);
         Point[] tipAndBB = res.getValue();
         Imgproc.rectangle(frame, tipAndBB[1], tipAndBB[2], new Scalar(0, 255, 0), 1);
         Imgproc.drawMarker(frame, tipAndBB[0], new Scalar(100, 100, 254), Imgproc.MARKER_STAR, 50, 1);

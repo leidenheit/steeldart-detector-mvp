@@ -4,40 +4,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
 @Setter
 public class ValueAngleRanges implements Serializable {
 
-
     private static ValueAngleRanges instance;
-
-    public final List<Integer> segmentValueIndexes = List.of(
-            6,
-            10,
-            15,
-            2,
-            17,
-            3,
-            19,
-            7,
-            16,
-            8,
-            11,
-            14,
-            9,
-            12,
-            5,
-            20,
-            1,
-            18,
-            4,
-            13
-    );
+    public final List<Integer> segmentValueIndexes = Arrays.stream(Segment.values())
+        .map(Segment::getValue).toList();
 
     private final HashMap<ValueRange, Integer> valueAngleRangeMap = new HashMap<>();
 

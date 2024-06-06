@@ -132,6 +132,9 @@ public class EvaluationController extends ContentWithCameraController {
         });
         buttonReplay.setOnAction(event -> {
             arrowTips.clear();
+            DartSingleton.getInstance().euclideanDistancesBySegment.clear();
+            DartSingleton.getInstance().arrowAnglesBySegment.clear();
+
             dartThrows = 0;
             falsePositives = 0;
 
@@ -344,7 +347,7 @@ public class EvaluationController extends ContentWithCameraController {
 
     private Pair<Pair<Integer, Mat>, Point[]> evaluateDartContour(final Mat frame, final MatOfPoint dartContour) {
         MatOfPoint convexHull = Detection.findConvexHull(dartContour);
-        Pair<Double, Point[]> res = Detection.findArrowTip(dartContour, convexHull, frame);
+        Pair<Double, Point[]> res = Detection.findArrowTip(frame, convexHull);
         Point[] tipAndBB = res.getValue();
 
         // TODO introduce type

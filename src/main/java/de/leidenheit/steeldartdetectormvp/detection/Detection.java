@@ -9,6 +9,8 @@ import org.opencv.imgproc.Moments;
 import java.text.MessageFormat;
 import java.util.*;
 
+import static java.lang.String.format;
+
 public class Detection {
 
     /**
@@ -462,7 +464,12 @@ public class Detection {
             }
             // System.out.printf("Amount of lines found: %s%n", lines.size());
             List<List<Line>> groupedSegments = groupLinesByTolerance(lines, lineGroupTolerance);
-            List<Line> segmentLines = calculateMeanLines(groupedSegments, center);
+            List<Double> segmentLineAngles = groupedSegments.stream()
+                    .map(groupedLine -> {
+                        var groupAngles = groupedLine.stream().map(Line::getAngle).toList();
+                        return calcMedian(groupAngles);
+                    })
+                    .toList();
             // debug
             //        for (final var line : segmentLines) {
             //            final var considerableLine = rgbMat.clone();
@@ -470,8 +477,8 @@ public class Detection {
             // debugShowImage(considerableLine, "considerable_line");
             //        }
             ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
-            if (segmentLines.size() == 20) {
-                valueAngleRanges = associateValueAngleRanges(center, segmentLines, clickPointOfSegment6);
+            if (segmentLineAngles.size() == 20) {
+                valueAngleRanges = associateValueAngleRanges(center, segmentLineAngles, clickPointOfSegment6);
                 List<Map.Entry<ValueAngleRanges.ValueRange, Integer>> list = new ArrayList<>(valueAngleRanges.getValueAngleRangeMap().entrySet().stream().toList());
                 list.sort(Comparator.comparingDouble(valueRangeIntegerEntry ->
                         valueRangeIntegerEntry.getKey().minValue()));
@@ -479,15 +486,17 @@ public class Detection {
                     System.out.printf("\tsegment=%s, angles=%s\n", o.getValue(), o.getKey().toString());
                 }
             } else {
-                System.out.printf("\nWARNING: requires 20 segment lines but found %d", segmentLines.size());
+                System.out.printf("\nWARNING: requires 20 segment lines but found %d", segmentLineAngles.size());
 
             }
             // horizontal line
             Imgproc.line(segments, new Point(0, center.y), new Point(1000, center.y), new Scalar(200, 200, 200), 1);
             // segment lines
-            Scalar lineColor = segmentLines.size() == 20 ? new Scalar(0, 255, 0) : new Scalar(0, 255, 255);
-            for (Line segmentLine : segmentLines) {
-                Imgproc.line(segments, segmentLine.getCenter(), segmentLine.getLinePoint(), lineColor, 1);
+            Scalar lineColor = segmentLineAngles.size() == 20 ? new Scalar(0, 0, 255) : new Scalar(0, 255, 255);
+            for (double segmentLineAngle : segmentLineAngles) {
+                var segmentLinePointX = center.x + 300 * Math.cos((segmentLineAngle * (Math.PI / 180)));
+                var segmentLinePointY = center.y + 300 * Math.sin((segmentLineAngle * (Math.PI / 180)));
+                Imgproc.line(segments, center, new Point(segmentLinePointX, segmentLinePointY), lineColor, 1);
             }
             valueAngleRanges.getValueAngleRangeMap().forEach((valueRange, integer) -> {
                 var segment = ValueAngleRanges.getInstance().findValueByAngle(valueRange.maxValue()-0.1d);
@@ -594,6 +603,7 @@ public class Detection {
      * @param innerBullMask
      * @return x & y coordinates of center mass
      */
+    // TODO refactor semantics
     public static Point findCircleCenter(final Mat frame, final Mat innerBullMask) throws LeidenheitException {
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
@@ -633,7 +643,7 @@ public class Detection {
         return angleCenterToPoint;
     }
 
-    private static ValueAngleRanges associateValueAngleRanges(final Point center, final List<Line> segmentLines, final Point clickPointOfSegmentToStartWith) throws LeidenheitException {
+    private static ValueAngleRanges associateValueAngleRanges(final Point center, final List<Double> segmentLineAngles, final Point clickPointOfSegmentToStartWith) throws LeidenheitException {
         ValueAngleRanges result = ValueAngleRanges.getInstance();
         result.getValueAngleRangeMap().clear();
         List<Integer> segmentIndices = ValueAngleRanges.getInstance().segmentValueIndexes;
@@ -641,35 +651,35 @@ public class Detection {
         // find the position of segment 6 (i)
         var angleOfSegment6 = calculateAngle(center, clickPointOfSegmentToStartWith);
 
-        System.out.printf("associateValueAngleRanges2: center=%s, segmentLines=%s, angleOfSegment=%.2f%n", center, segmentLines.size(), angleOfSegment6);
+        System.out.printf("associateValueAngleRanges: center=%s, segmentLinesAngles=%s, angleOfSegment=%.2f%n", center, segmentLineAngles.size(), angleOfSegment6);
 
-        var sorted = segmentLines.stream()
-                .sorted(Comparator.comparingDouble(Line::getAngle)).toList();
+        var sorted = segmentLineAngles.stream()
+                .sorted(Comparator.comparingDouble(Double::doubleValue)).toList();
 
-        Line lineUpperBoundary = sorted.stream()
-                .filter(line -> line.getAngle() >= angleOfSegment6 || (360d-angleOfSegment6) <= 18)
+        var lineUpperBoundary = sorted.stream()
+                .filter(lineAngle ->  lineAngle >= angleOfSegment6 || (360d-angleOfSegment6) <= 18)
                 .findFirst()
                 .orElseThrow();
-        var lastLineIndex = segmentLines.indexOf(lineUpperBoundary);
-        Line lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
-        System.out.printf("determine clicked segment 6: lastLineIndex=%s low=%.2f, high=%.2f%n", lastLineIndex, lineLowerBoundary.getAngle(), lineUpperBoundary.getAngle());
+        var lastLineIndex = segmentLineAngles.indexOf(lineUpperBoundary);
+        var lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
+        System.out.printf("determine clicked segment 6: lastLineIndex=%s low=%.2f, high=%.2f%n", lastLineIndex, lineLowerBoundary, lineUpperBoundary);
         // add segment 6
         result.putValueForAngleRange(
                 0,
-                lineLowerBoundary.getAngle(),
-                lineUpperBoundary.getAngle());
+                lineLowerBoundary,
+                lineUpperBoundary);
 
         // iterate other indices
         for (int i = 1; i < segmentIndices.size(); i++) {
             lineUpperBoundary = sorted.get((lastLineIndex + 1) % sorted.size());
             lastLineIndex = sorted.indexOf(lineUpperBoundary);
             lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
-            System.out.printf("auto determine segment: segmentIndex=%s, segment=%s, lastLineIndex=%s, low=%.2f, high=%.2f%n", i, segmentIndices.get(i), lastLineIndex, lineLowerBoundary.getAngle(), lineUpperBoundary.getAngle());
+            System.out.printf("auto determine segment: segmentIndex=%s, segment=%s, lastLineIndex=%s, low=%.2f, high=%.2f%n", i, segmentIndices.get(i), lastLineIndex, lineLowerBoundary, lineUpperBoundary);
             // add segment
             result.putValueForAngleRange(
                     i,
-                    lineLowerBoundary.getAngle(),
-                    lineUpperBoundary.getAngle());
+                    lineLowerBoundary,
+                    lineUpperBoundary);
         }
         return result;
     }
@@ -726,6 +736,17 @@ public class Detection {
                 Point lineEnd = new Point(l[2], l[3]);
                 candidates.add(List.of(lineBegin, lineEnd));
             }
+
+            // TODO Debug
+//            Mat x = bgr.clone();
+//            for (int i = 0; i < linesP.rows(); i++) {
+//                double[] l = linesP.get(i, 0);
+//                Point pt1 = new Point(l[0], l[1]);
+//                Point pt2 = new Point(l[2], l[3]);
+//                Imgproc.line(x, pt1, pt2, new Scalar(0, 0, 255), 1);
+//            }
+//            debugShowImage(x, "");
+
 
             gray.release();
             thres.release();
@@ -839,10 +860,9 @@ public class Detection {
     /**
      *
      * @param convexHull
-     * @param frame
      * @return
      */
-    public static Pair<Double, Point[]> findArrowTip(final MatOfPoint contour, final MatOfPoint convexHull, Mat frame) {
+    public static Pair<Double, Point[]> findArrowTip(final Mat frame, final MatOfPoint convexHull) {
         // contour mass center
         Moments moments = Imgproc.moments(convexHull);
         Point center = new Point(moments.get_m10() / moments.get_m00(), moments.get_m01() / moments.get_m00());
@@ -851,24 +871,14 @@ public class Detection {
         List<Point> contourPoints = convexHull.toList();
         Point arrowTip = findFurthestPoint(contourPoints, center);
 
-        // euclidean distance
+        Point dartboardCenter = Detection.findCircleCenter(null, MaskSingleton.getInstance().innerBullMask);
+        int segmentValueOfArrowMassCenter = DartSingleton.estimateSegmentByArrowMassCenter(dartboardCenter, center);
         double euclideanDistance = calculateEuclideanDistance(center, arrowTip);
-        DartSingleton.getInstance().euclideanDistances.add(euclideanDistance);
-        double euclideanMedian = calcMedian(DartSingleton.getInstance().euclideanDistances);
-        // angle
         double arrowAngle = calculateAngle(center, arrowTip);
-        DartSingleton.getInstance().arrowAngles.add(arrowAngle);
-        double arrowAngleMedian = calcMedian(DartSingleton.getInstance().arrowAngles);
 
         // determine if the arrow is covered and an arrow tip estimation should take place here
-        if (shouldExtendArrowTip(contour, euclideanDistance, arrowAngle)) {
-            // estimation
-            double estimatedX = center.x + euclideanMedian * Math.cos(Math.toRadians(arrowAngleMedian));
-            double estimatedY = center.y + euclideanMedian * Math.sin(Math.toRadians(arrowAngleMedian));
-            Point estimatedTip = new Point(estimatedX, estimatedY);
-
-            // override
-            arrowTip = estimatedTip;
+        if (shouldExtendArrowTip(segmentValueOfArrowMassCenter, euclideanDistance, arrowAngle)) {
+            Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center);
 
             // TODO debugging
 //            Mat line = frame.clone();
@@ -881,6 +891,27 @@ public class Detection {
 //            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
 //             debugShowImage(line, "");
 //            line.release();
+
+            // override
+            arrowTip = estimatedTip;
+        } else {
+            // handling for Euclidean distance
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfPresent(segmentValueOfArrowMassCenter, (segmentValue, distances) -> {
+                distances.add(euclideanDistance);
+                return distances;
+            });
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfAbsent(segmentValueOfArrowMassCenter, segmentValue -> {
+                return new ArrayList<>(List.of(euclideanDistance));
+            });
+
+            // handling for angle
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfPresent(segmentValueOfArrowMassCenter, (segmentValue, angles) -> {
+                angles.add(arrowAngle);
+                return angles;
+            });
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfAbsent(segmentValueOfArrowMassCenter, segmentValue -> {
+                return new ArrayList<>(List.of(arrowAngle));
+            });
         }
 
         Rect boundingBox = Imgproc.boundingRect(convexHull);
@@ -914,15 +945,54 @@ public class Detection {
      * @param euclideanDistance
      * @return
      */
-    private static boolean shouldExtendArrowTip(final MatOfPoint contour, final double euclideanDistance, final double angle) {
-        double medianEuclid = calcMedian(DartSingleton.getInstance().euclideanDistances);
-        double mediaAngle = calcMedian(DartSingleton.getInstance().arrowAngles);
+    private static boolean shouldExtendArrowTip(final int segmentValue, final double euclideanDistance, final double angle) {
+        Segment segment = Arrays.stream(Segment.values())
+                .filter(s -> s.getValue() == segmentValue)
+                .findFirst()
+                .orElseThrow(() -> new LeidenheitException(format("segment not found for value %s", segmentValue)));
+
+        List<Double> euclideanDistances = new ArrayList<>();
+        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
+        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
+        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
+        if (euclideanDistancesCurrent != null) {
+            euclideanDistances.addAll(euclideanDistancesCurrent);
+        }
+        if (euclideanDistancesPrevious != null) {
+            euclideanDistances.addAll(euclideanDistancesPrevious);
+        }
+        if (euclideanDistancesNext != null) {
+            euclideanDistances.addAll(euclideanDistancesNext);
+        }
+
+        List<Double> angles = new ArrayList<>();
+        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
+        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
+        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
+        if (anglesCurrent != null) {
+            angles.addAll(anglesCurrent);
+        }
+        if (anglesPrevious != null) {
+            angles.addAll(anglesPrevious);
+        }
+        if (anglesNext != null) {
+            angles.addAll(anglesNext);
+        }
+
+        if (euclideanDistances.isEmpty() || angles.isEmpty()) {
+            return false;
+        }
+        double medianEuclid = calcMedian(euclideanDistances);
+        double mediaAngle = calcMedian(angles);
         boolean euclidBelowThreshold = (euclideanDistance < medianEuclid)
-                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20d);
-        boolean angleBelowThreshold = (angle < mediaAngle)
-                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 20d);
-        System.out.printf("shouldExtendArrowTip: angle=%s (median=%s); euclideanDist=%s (median=%s)\n", angle, mediaAngle, euclideanDistance, medianEuclid);
-        return euclidBelowThreshold || angleBelowThreshold;
+                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20.0d);
+// TODO: most likely not relevant in this context
+//        boolean angleBelowThreshold = (angle < mediaAngle)
+//                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 66.6d);
+//        boolean result = euclidBelowThreshold || angleBelowThreshold;
+        boolean result = euclidBelowThreshold;
+        System.out.printf("Arrow Tip must be estimated (%s): segment=%s angle=%s (median=%s); euclideanDist=%s (median=%s)%n", result, segmentValue, angle, mediaAngle, euclideanDistance, medianEuclid);
+        return result;
     }
 
     /**

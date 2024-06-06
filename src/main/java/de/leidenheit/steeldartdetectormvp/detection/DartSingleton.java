@@ -8,8 +8,9 @@ import org.opencv.core.Point;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static java.lang.String.format;
 
 @Getter
 @Setter
@@ -33,8 +34,80 @@ public class DartSingleton implements Serializable {
 
     // ignored by serialization
     private final transient List<String> debugList = new ArrayList<>();
-    public final transient List<Double> euclideanDistances = new ArrayList<>();
-    public final transient List<Double> arrowAngles = new ArrayList<>();
+    public final transient Map<Integer, ArrayList<Double>> euclideanDistancesBySegment = new HashMap<>();
+    public final transient Map<Integer, ArrayList<Double>> arrowAnglesBySegment = new HashMap<>();
+    // TODO persist segment median euclidean distance and median angle
+
+    public static int estimateSegmentByArrowMassCenter(final Point dartboardCenter, final Point arrowMassCenter) {
+        double angle = Detection.calculateAngle(dartboardCenter, arrowMassCenter);
+        var segment = MaskSingleton.getInstance().valueAngleRanges.getValueAngleRangeMap().entrySet().stream()
+                .filter(entry -> {
+                    var angleToUse = (angle + 360) % 360;
+                    var min = (entry.getKey().minValue() + 360) % 360;
+                    var max = (entry.getKey().maxValue() + 360) % 360;
+
+                    return min <= max ?
+                            angleToUse >= min && angleToUse <= max
+                            : angleToUse >= min || angleToUse <= max;
+                })
+                .findFirst()
+                .orElseThrow(() -> new LeidenheitException("Not able to determine segment for arrow tip"));
+        return segment.getValue();
+    }
+    public static Point estimateCoveredArrowTipForSegment(final int segmentValue, final Point arrowMassCenter) {
+        Segment segment = Arrays.stream(Segment.values())
+                .filter(s -> s.getValue() == segmentValue)
+                .findFirst()
+                .orElseThrow(() -> new LeidenheitException(format("segment not found for value %s", segmentValue)));
+
+        // estimation
+        List<Double> medianAngles = new ArrayList<>();
+        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
+        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
+        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
+        if (anglesCurrent != null) {
+            medianAngles.add(Detection.calcMedian(anglesCurrent));
+        }
+        if (anglesPrevious != null) {
+            medianAngles.add(Detection.calcMedian(anglesPrevious));
+        }
+        if (anglesNext != null) {
+            medianAngles.add(Detection.calcMedian(anglesNext));
+        }
+        double meanArrowAngle = 0;
+        for (double medianAngle : medianAngles) {
+            meanArrowAngle += medianAngle;
+        }
+        meanArrowAngle = meanArrowAngle / medianAngles.size();
+
+
+        List<Double> medianEuclideanDistances = new ArrayList<>();
+        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
+        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
+        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
+        if (euclideanDistancesCurrent != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesCurrent));
+        }
+        if (euclideanDistancesPrevious != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesPrevious));
+        }
+        if (euclideanDistancesNext != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesNext));
+        }
+        double meanEuclideanDistance = 0;
+        for (double medianEuclideanDistance : medianEuclideanDistances) {
+            meanEuclideanDistance += medianEuclideanDistance;
+        }
+        meanEuclideanDistance = meanEuclideanDistance / medianEuclideanDistances.size();
+
+
+        double estimatedX = arrowMassCenter.x + meanEuclideanDistance * Math.cos(Math.toRadians(meanArrowAngle));
+        double estimatedY = arrowMassCenter.y + meanEuclideanDistance * Math.sin(Math.toRadians(meanArrowAngle));
+        // override
+        return new Point(estimatedX, estimatedY);
+    }
+
+
 
     // scale factor configuration
     public double scaleFactor = 1d;
@@ -45,11 +118,10 @@ public class DartSingleton implements Serializable {
     public int vidDilateIterations = 1;
     public int vidSubtractorThreshold = 75;
     public int vidMinContourArea = 100;
-    public int vidMaxMergedContourArea = 15_000;
+    public int vidMaxMergedContourArea = 15_000*1000; // TODO AVa fix this
     public double vidAspectRatioLow = 0;
     public double vidAspectRatioHigh = 3;
     public double vidUnpluggingThreshold = 15_000;
-    // TODO add max merged contour area
 
     private DartSingleton() throws URISyntaxException {
         // hide constructor
