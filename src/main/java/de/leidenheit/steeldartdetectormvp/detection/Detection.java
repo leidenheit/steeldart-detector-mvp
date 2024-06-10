@@ -998,7 +998,7 @@ public class Detection {
         var meanEuclid = DartSingleton.calculateMean(distances);
 
         boolean euclidBelowThreshold = (euclideanDistance < meanEuclid)
-                && ((((Math.abs(euclideanDistance - meanEuclid)) / meanEuclid) * 100) >= 20d);
+                && ((((Math.abs(euclideanDistance - meanEuclid)) / meanEuclid) * 100) >= 20d); // FIXME: must be configurable
 
 
 

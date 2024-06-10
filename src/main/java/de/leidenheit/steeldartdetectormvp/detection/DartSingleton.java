@@ -176,13 +176,13 @@ public class DartSingleton implements Serializable {
         // estimation
         var estimatedDistance = bayesianEstimate(distanceMean, distanceVariance, coveredArrowDistance, coveredArrowDistanceVariance);
 
-
-        estimatedX = arrowMassCenter.x + (estimatedDistance /*+ estimatedDistance * 0.1*/) * Math.cos(Math.toRadians(angleMean));
-        estimatedY = arrowMassCenter.y + (estimatedDistance /*+ estimatedDistance * 0.1*/) * Math.sin(Math.toRadians(angleMean));
+        if (!Double.isNaN(estimatedDistance)) {
+            estimatedX = arrowMassCenter.x + (estimatedDistance /*+ estimatedDistance * 0.1*/) * Math.cos(Math.toRadians(angleMean));
+            estimatedY = arrowMassCenter.y + (estimatedDistance /*+ estimatedDistance * 0.1*/) * Math.sin(Math.toRadians(angleMean));
+        }
         // override
         return new Point(estimatedX, estimatedY);
     }
-
 
     // scale factor configuration
     public double scaleFactor = 1d;
