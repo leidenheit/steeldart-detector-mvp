@@ -872,44 +872,45 @@ public class Detection {
         Point arrowTip = findFurthestPoint(contourPoints, center);
 
         Point dartboardCenter = Detection.findCircleCenter(null, MaskSingleton.getInstance().innerBullMask);
-        int segmentValueOfArrowMassCenter = DartSingleton.estimateSegmentByArrowMassCenter(dartboardCenter, center);
+        int segmentValueOfArrowMassCenter = DartSingleton.estimateSegmentByPoint(dartboardCenter, center);
         double euclideanDistance = calculateEuclideanDistance(center, arrowTip);
         double arrowAngle = calculateAngle(center, arrowTip);
 
         // determine if the arrow is covered and an arrow tip estimation should take place here
         if (shouldExtendArrowTip(segmentValueOfArrowMassCenter, euclideanDistance, arrowAngle)) {
-            Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center);
+            Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center, arrowAngle, euclideanDistance);
 
-            // TODO debugging
-//            Mat line = frame.clone();
-//            Imgproc.circle(line, estimatedTip, 3, new Scalar(0, 255, 0), -1);
-//            Imgproc.putText(line, "estimated", estimatedTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-//            Imgproc.circle(line, center, 3, new Scalar(255, 0, 0), -1);
-//            Imgproc.putText(line, "center", center, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-//            Imgproc.circle(line, arrowTip, 3, new Scalar(0, 0, 255), -1);
-//            Imgproc.putText(line, "tip", arrowTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-//            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
-//             debugShowImage(line, "");
-//            line.release();
+//             TODO debugging
+            Mat line = frame.clone();
+            Imgproc.circle(line, estimatedTip, 3, new Scalar(0, 255, 0), -1);
+            Imgproc.putText(line, "estimated", estimatedTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+            Imgproc.circle(line, center, 3, new Scalar(255, 0, 0), -1);
+            Imgproc.putText(line, "center", center, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+            Imgproc.circle(line, arrowTip, 3, new Scalar(0, 0, 255), -1);
+            Imgproc.putText(line, "tip", arrowTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
+            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
+             debugShowImage(line, "");
+            line.release();
 
             // override
             arrowTip = estimatedTip;
         } else {
+            int segmentValueOfArrowTip = DartSingleton.estimateSegmentByPoint(dartboardCenter, arrowTip);
             // handling for Euclidean distance
-            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfPresent(segmentValueOfArrowMassCenter, (segmentValue, distances) -> {
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfPresent(segmentValueOfArrowTip, (segmentValue, distances) -> {
                 distances.add(euclideanDistance);
                 return distances;
             });
-            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfAbsent(segmentValueOfArrowMassCenter, segmentValue -> {
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfAbsent(segmentValueOfArrowTip, segmentValue -> {
                 return new ArrayList<>(List.of(euclideanDistance));
             });
 
             // handling for angle
-            DartSingleton.getInstance().arrowAnglesBySegment.computeIfPresent(segmentValueOfArrowMassCenter, (segmentValue, angles) -> {
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfPresent(segmentValueOfArrowTip, (segmentValue, angles) -> {
                 angles.add(arrowAngle);
                 return angles;
             });
-            DartSingleton.getInstance().arrowAnglesBySegment.computeIfAbsent(segmentValueOfArrowMassCenter, segmentValue -> {
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfAbsent(segmentValueOfArrowTip, segmentValue -> {
                 return new ArrayList<>(List.of(arrowAngle));
             });
         }
@@ -936,7 +937,7 @@ public class Detection {
      * @param p2
      * @return
      */
-    private static double calculateEuclideanDistance(Point p1, Point p2) {
+    public static double calculateEuclideanDistance(Point p1, Point p2) {
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     }
 
@@ -951,47 +952,59 @@ public class Detection {
                 .findFirst()
                 .orElseThrow(() -> new LeidenheitException(format("segment not found for value %s", segmentValue)));
 
-        List<Double> euclideanDistances = new ArrayList<>();
-        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
-        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
-        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
-        if (euclideanDistancesCurrent != null) {
-            euclideanDistances.addAll(euclideanDistancesCurrent);
-        }
-        if (euclideanDistancesPrevious != null) {
-            euclideanDistances.addAll(euclideanDistancesPrevious);
-        }
-        if (euclideanDistancesNext != null) {
-            euclideanDistances.addAll(euclideanDistancesNext);
-        }
+//        List<Double> euclideanDistances = new ArrayList<>();
+//        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
+//        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
+//        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
+//        if (euclideanDistancesCurrent != null) {
+//            euclideanDistances.addAll(euclideanDistancesCurrent);
+//        }
+//        if (euclideanDistancesPrevious != null) {
+//            euclideanDistances.addAll(euclideanDistancesPrevious);
+//        }
+//        if (euclideanDistancesNext != null) {
+//            euclideanDistances.addAll(euclideanDistancesNext);
+//        }
+//
+//        List<Double> angles = new ArrayList<>();
+//        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
+//        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
+//        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
+//        if (anglesCurrent != null) {
+//            angles.addAll(anglesCurrent);
+//        }
+//        if (anglesPrevious != null) {
+//            angles.addAll(anglesPrevious);
+//        }
+//        if (anglesNext != null) {
+//            angles.addAll(anglesNext);
+//        }
+//
+//        if (euclideanDistances.isEmpty() || angles.isEmpty()) {
+//            return false;
+//        }
+//        double medianEuclid = calcMedian(euclideanDistances);
+//        double mediaAngle = calcMedian(angles);
+//        boolean euclidBelowThreshold = (euclideanDistance < medianEuclid)
+//                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20.0d);
+//// TODO: most likely not relevant in this context
+////        boolean angleBelowThreshold = (angle < mediaAngle)
+////                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 66.6d);
+////        boolean result = euclidBelowThreshold || angleBelowThreshold;
 
-        List<Double> angles = new ArrayList<>();
-        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
-        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
-        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
-        if (anglesCurrent != null) {
-            angles.addAll(anglesCurrent);
-        }
-        if (anglesPrevious != null) {
-            angles.addAll(anglesPrevious);
-        }
-        if (anglesNext != null) {
-            angles.addAll(anglesNext);
-        }
 
-        if (euclideanDistances.isEmpty() || angles.isEmpty()) {
-            return false;
-        }
-        double medianEuclid = calcMedian(euclideanDistances);
-        double mediaAngle = calcMedian(angles);
-        boolean euclidBelowThreshold = (euclideanDistance < medianEuclid)
-                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20.0d);
-// TODO: most likely not relevant in this context
-//        boolean angleBelowThreshold = (angle < mediaAngle)
-//                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 66.6d);
-//        boolean result = euclidBelowThreshold || angleBelowThreshold;
+        var distances = new ArrayList<Double>();
+        DartSingleton.getInstance().euclideanDistancesBySegment.forEach((key, value) -> distances.addAll(value));
+        var meanEuclid = DartSingleton.calculateMean(distances);
+
+        boolean euclidBelowThreshold = (euclideanDistance < meanEuclid)
+                && ((((Math.abs(euclideanDistance - meanEuclid)) / meanEuclid) * 100) >= 20d);
+
+
+
         boolean result = euclidBelowThreshold;
-        System.out.printf("Arrow Tip must be estimated (%s): segment=%s angle=%s (median=%s); euclideanDist=%s (median=%s)%n", result, segmentValue, angle, mediaAngle, euclideanDistance, medianEuclid);
+        System.out.printf("Arrow Tip must be estimated (%s): segment=%s, angle=%.2f, euclideanDist=%.2f (mean=%.2f)%n",
+                result, segmentValue, angle, euclideanDistance, meanEuclid);
         return result;
     }
 
