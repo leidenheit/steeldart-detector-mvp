@@ -64,6 +64,8 @@ public class EvaluationController extends ContentWithCameraController {
     @FXML
     public Slider sliderUnpluggingThreshold;
     @FXML
+    public Slider sliderEstimationThresholdPercentage;
+    @FXML
     public Button buttonExport;
 
     private BackgroundSubtractorMOG2 subtractor;
@@ -161,6 +163,7 @@ public class EvaluationController extends ContentWithCameraController {
         sliderAspectRatioLow.setValue(DartSingleton.getInstance().vidAspectRatioLow);
         sliderAspectRatioHigh.setValue(DartSingleton.getInstance().vidAspectRatioHigh);
         sliderUnpluggingThreshold.setValue(DartSingleton.getInstance().vidUnpluggingThreshold);
+        sliderEstimationThresholdPercentage.setValue(DartSingleton.getInstance().estimationThresholdPercentage);
 
         // reset skip flag
         skipUntilDiffZero = false;
@@ -228,6 +231,7 @@ public class EvaluationController extends ContentWithCameraController {
                     maskToEval.release();
                     return;
                 }
+
                 // evaluation of candidate
                 boolean significantChanges = Detection.hasSignificantChanges(nextMask, 0, 10);
                 if (!maskToEval.empty() && significantChanges) {
@@ -250,26 +254,17 @@ public class EvaluationController extends ContentWithCameraController {
                         Pair<Pair<Integer, Mat>, Point[]> scoreAndDartTipBoundingBoxPair = evaluateDartContour(nextFrame, mergedContour);
 
                         // draw hit segment mask
-                        try {
-                            Point center = Detection.findCircleCenter(nextFrame, MaskSingleton.getInstance().innerBullMask);
-                            Imgproc.circle(nextFrame, center, 1, new Scalar(255, 0, 0), -1);
-                            double angle = Detection.calculateAngle(center, scoreAndDartTipBoundingBoxPair.getValue()[0]);
-                            Point firstPoint = new Point(resolutionWidth, center.y);
-                            var segment = MaskSingleton.getInstance().valueAngleRanges.getValueAngleRangeMap().entrySet().stream()
-                                    .filter(entry -> angle >= entry.getKey().minValue() && angle <= entry.getKey().maxValue())
-                                    .findFirst()
-                                    .orElse(null);
-                            if (segment != null) {
-                                double radianMin = Math.toRadians(segment.getKey().minValue());
-                                double radianMax = Math.toRadians(segment.getKey().maxValue());
-                                Point newPointMin = Detection.rotatePoint(center, firstPoint, radianMin);
-                                Point newPointMax = Detection.rotatePoint(center, firstPoint, radianMax);
-                                Imgproc.line(nextFrame, center, newPointMin, new Scalar(0, 255, 0), 2);
-                                Imgproc.line(nextFrame, center, newPointMax, new Scalar(200, 0, 0), 2);
-                            }
-                        } catch (LeidenheitException e) {
-                            throw new RuntimeException(e);
-                        }
+                        Point center = Detection.findCircleCenter(nextFrame, MaskSingleton.getInstance().innerBullMask);
+                        Imgproc.circle(nextFrame, center, 3, new Scalar(100, 255, 255), -1);
+                        Point firstPoint = new Point(resolutionWidth, center.y);
+                        var segment = Detection.estimateSegmentByPoint(center, scoreAndDartTipBoundingBoxPair.getValue()[0]);
+                        double radianMin = Math.toRadians(segment.getLowerBoundaryAngle());
+                        double radianMax = Math.toRadians(segment.getUpperBoundaryAngle());
+                        Point newPointMin = Detection.rotatePoint(center, firstPoint, radianMin);
+                        Point newPointMax = Detection.rotatePoint(center, firstPoint, radianMax);
+                        Imgproc.line(nextFrame, center, newPointMin, new Scalar(0, 255, 0), 2);
+                        Imgproc.line(nextFrame, center, newPointMax, new Scalar(200, 0, 0), 2);
+
                         applyDebugDetails(nextFrame, maskToEval, scoreAndDartTipBoundingBoxPair);
                         arrowTips.add(scoreAndDartTipBoundingBoxPair.getValue()[0]);
                         dartThrows++;
@@ -309,8 +304,8 @@ public class EvaluationController extends ContentWithCameraController {
                         scoreAndDartTipBoundingBoxPair.getValue()[1], // tl
                         scoreAndDartTipBoundingBoxPair.getValue()[2], // br
                         new Scalar(125, 125, 20), 2);
-                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[3], 2, new Scalar(0, 255, 100), -1);
-                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[0], 2, new Scalar(0, 100, 255), -1);
+                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[3], 4, new Scalar(0, 0, 255), -1);
+                Imgproc.circle(image, scoreAndDartTipBoundingBoxPair.getValue()[0], 4, new Scalar(255, 0, 0), -1);
 
                 Mat finalImage = image.clone();
                 image.release();
@@ -360,8 +355,7 @@ public class EvaluationController extends ContentWithCameraController {
                 double angle = Detection.calculateAngle(center, tipAndBB[0]);
                 log("Eval Step: Detected angle of tip of dart: {0} @ frame {1}", angle, framePos);
                 scoreMaskPair = Detection.evaluatePoint(
-                        MaskSingleton.getInstance().valueAngleRanges,
-                        angle,
+                        center,
                         tipAndBB[0],
                         MaskSingleton.getInstance().dartboardMask,
                         MaskSingleton.getInstance().innerBullMask,
@@ -396,6 +390,7 @@ public class EvaluationController extends ContentWithCameraController {
         final var aspectRatioLow = (int) sliderAspectRatioLow.getValue();
         final var aspectRatioHigh = (int) sliderAspectRatioHigh.getValue();
         final var unpluggingThreshold = (int) sliderUnpluggingThreshold.getValue();
+        final var estimationThresholdPercentage = (int) sliderEstimationThresholdPercentage.getValue();
         DartSingleton.getInstance().vidGaussian = gaussian;
         DartSingleton.getInstance().vidErodeIterations = erodeIterations;
         DartSingleton.getInstance().vidCloseIterations = closeIterations;
@@ -404,6 +399,7 @@ public class EvaluationController extends ContentWithCameraController {
         DartSingleton.getInstance().vidAspectRatioLow = aspectRatioLow;
         DartSingleton.getInstance().vidAspectRatioHigh = aspectRatioHigh;
         DartSingleton.getInstance().vidUnpluggingThreshold = unpluggingThreshold;
+        DartSingleton.getInstance().estimationThresholdPercentage = estimationThresholdPercentage;
 
         tryApplyReferenceImage(frame);
         if (shouldSkipFrame()) return frame;
@@ -426,6 +422,15 @@ public class EvaluationController extends ContentWithCameraController {
                 handleDeepFrameEvaluation(framePosToStart, framePosToEnd);
             }
             drawArrowTips(frame);
+
+            // all darts thrown
+            if (Arrays.stream(scoreArray).filter(v -> v == -1).findAny().isEmpty()) {
+                Mat shape = new Mat(frame.size(), frame.type());
+                Imgproc.rectangle(shape, new Rect(0, 0, frame.width(), frame.height()), new Scalar(200, 200, 200), -1,Imgproc.LINE_AA);
+                Core.addWeighted(frame, 0.5d, shape, 1d - 0.5d, 0, frame);
+                Size textSize = Imgproc.getTextSize("Please Remove Darts",  Imgproc.FONT_HERSHEY_SIMPLEX, 1.5d, 5, null);
+                Imgproc.putText(frame, "Please Remove Darts", new Point((frame.width() / 2) - (textSize.width / 2), (frame.height() / 2) + (textSize.height / 2)), Imgproc.FONT_HERSHEY_SIMPLEX, 1.5d, new Scalar(255, 0, 0), 5);
+            }
         } finally {
             mask.release();
             updateUI();
@@ -435,7 +440,7 @@ public class EvaluationController extends ContentWithCameraController {
 
     private void drawArrowTips(final Mat frame) {
         for (final Point hit : this.arrowTips) {
-            Imgproc.circle(frame, hit, 3, new Scalar(255, 0, 255), -1, Imgproc.LINE_AA);
+            Imgproc.circle(frame, hit, 3, new Scalar(100, 255, 255), -1, Imgproc.LINE_AA);
         }
     }
 

@@ -116,11 +116,13 @@
                                                 </HBox.margin>
                                             </Slider>
                                         </HBox>
-                                        <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false" text="Reset Params">
-                                            <VBox.margin>
-                                                <Insets bottom="8.0" right="8.0" top="8.0" />
-                                            </VBox.margin>
-                                        </Button>
+                                        <HBox prefHeight="22.0" prefWidth="637.0">
+                                            <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false" text="Reset Params">
+                                                <VBox.margin>
+                                                    <Insets bottom="8.0" right="8.0" top="8.0" />
+                                                </VBox.margin>
+                                            </Button>
+                                        </HBox>
                                     </children>
                                 </VBox>
                             </children>

@@ -257,7 +257,20 @@
                                                 </HBox.margin>
                                             </Slider>
                                         </children>
-                                    </HBox>
+                                    </HBox><HBox prefHeight="22.0" prefWidth="1126.0">
+                                    <children>
+                                        <Label text="estimation threshold in %:">
+                                            <HBox.margin>
+                                                <Insets />
+                                            </HBox.margin>
+                                        </Label>
+                                        <Slider fx:id="sliderEstimationThresholdPercentage" blockIncrement="5" majorTickUnit="5.0" max="75" min="5" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="20">
+                                            <HBox.margin>
+                                                <Insets />
+                                            </HBox.margin>
+                                        </Slider>
+                                    </children>
+                                </HBox>
                                 </VBox>
                             </children>
                         </HBox>

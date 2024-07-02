@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane prefHeight="746.0" prefWidth="1263.0" style="-fx-background-color: #cc9999;" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="de.leidenheit.steeldartdetectormvp.steps.dartboard.ContentMaskSegmentFineAdjustmentController">
+    <children>
+        <SplitPane centerShape="false" dividerPositions="0.047533632286995524" orientation="VERTICAL" prefHeight="746.0" prefWidth="1263.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="274.0" prefWidth="1261.0">
+                    <children>
+                        <HBox prefHeight="261.0" prefWidth="1261.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <children>
+                                <VBox prefHeight="261.0" prefWidth="1274.0">
+                                    <children>
+                                        <HBox prefHeight="22.0" prefWidth="637.0">
+                                            <Button fx:id="buttonResetParams" alignment="CENTER" mnemonicParsing="false" text="Reset Params">
+                                                <VBox.margin>
+                                                    <Insets bottom="8.0" right="8.0" top="8.0" />
+                                                </VBox.margin>
+                                            </Button>
+                                            <ChoiceBox fx:id="choiceBoxSegment" prefWidth="150.0" />
+                                            <Spinner fx:id="spinnerAngleFrom" />
+                                            <Spinner fx:id="spinnerAngleTo" />
+                                        </HBox>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </AnchorPane>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="523.0" prefWidth="1261.0">
+                    <children>
+                        <SplitPane dividerPositions="0.27291997880233165" layoutX="274.0" layoutY="134.0" prefHeight="548.6666666666666" prefWidth="1260.6666666666667" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <items>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                    <children>
+                                        <VBox prefHeight="546.0" prefWidth="625.3333333333334" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                            <children>
+                                                <Label text="Source Image">
+                                                    <VBox.margin>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                                    </VBox.margin>
+                                                </Label>
+                                                <ImageView fx:id="imageViewSource" fitHeight="440.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true">
+                                                    <VBox.margin>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                                    </VBox.margin>
+                                                    <viewport>
+                                                        <Rectangle2D />
+                                                    </viewport>
+                                                </ImageView>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </AnchorPane>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                    <children>
+                                        <VBox prefHeight="546.0" prefWidth="626.6666666666666" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                            <children>
+                                                <Label text="Computed Image">
+                                                    <VBox.margin>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                                    </VBox.margin>
+                                                </Label>
+                                                <!-- fitHeight="440.0" fitWidth="600.0" pickOnBounds="true" preserveRatio="true" -->
+                                                <ImageView fx:id="imageViewComputed">
+                                                    <VBox.margin>
+                                                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                                                    </VBox.margin>
+                                                </ImageView>
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </AnchorPane>
+                            </items>
+                        </SplitPane>
+                    </children>
+                </AnchorPane>
+            </items>
+        </SplitPane>
+    </children>
+</AnchorPane>

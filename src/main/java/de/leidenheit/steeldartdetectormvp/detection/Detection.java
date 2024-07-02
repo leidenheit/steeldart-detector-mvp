@@ -419,7 +419,7 @@ public class Detection {
      * @return Angles for dartboard segments
      * @throws LeidenheitException
      */
-    public static ValueAngleRanges determineDartboardSegments(
+    public static List<SegmentData> determineDartboardSegments(
             final Point center,
             final Mat bgr,
             final Mat segments,
@@ -427,7 +427,6 @@ public class Detection {
             final Mat maskDouble,
             final Mat maskTriple,
             final Mat maskMultiRings,
-            final int cannyGaussian,
             final int lineCandidateDilateKernelSize,
             final double lineGroupTolerance,
             final int cannyThreshold1,
@@ -476,18 +475,18 @@ public class Detection {
             //            Imgproc.line(segments, line.getCenter(), line.getLinePoint(), new Scalar(0, 255, 200), 2);
             // debugShowImage(considerableLine, "considerable_line");
             //        }
-            ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
+            List<SegmentData> result = new ArrayList<>();
             if (segmentLineAngles.size() == 20) {
-                valueAngleRanges = associateValueAngleRanges(center, segmentLineAngles, clickPointOfSegment6);
-                List<Map.Entry<ValueAngleRanges.ValueRange, Integer>> list = new ArrayList<>(valueAngleRanges.getValueAngleRangeMap().entrySet().stream().toList());
-                list.sort(Comparator.comparingDouble(valueRangeIntegerEntry ->
-                        valueRangeIntegerEntry.getKey().minValue()));
-                for (var o : list) {
-                    System.out.printf("\tsegment=%s, angles=%s\n", o.getValue(), o.getKey().toString());
+                if (!MaskSingleton.getInstance().segmentDataList.isEmpty()) {
+                    MaskSingleton.getInstance().segmentDataList.clear();
+                }
+                var segmentBoundariesList = associateSegmentBoundaries(center, segmentLineAngles, clickPointOfSegment6);
+                result.addAll(segmentBoundariesList);
+                for (var o : result) {
+                    System.out.printf("\tsegment=%s, angles=%.2f-%.2f%n", o.getSegment().getValue(), o.getLowerBoundaryAngle(), o.getUpperBoundaryAngle());
                 }
             } else {
-                System.out.printf("\nWARNING: requires 20 segment lines but found %d", segmentLineAngles.size());
-
+                System.out.printf("%nWARNING: found %d but require 20 segment lines%n", segmentLineAngles.size());
             }
             // horizontal line
             Imgproc.line(segments, new Point(0, center.y), new Point(1000, center.y), new Scalar(200, 200, 200), 1);
@@ -498,21 +497,25 @@ public class Detection {
                 var segmentLinePointY = center.y + 300 * Math.sin((segmentLineAngle * (Math.PI / 180)));
                 Imgproc.line(segments, center, new Point(segmentLinePointX, segmentLinePointY), lineColor, 1);
             }
-            valueAngleRanges.getValueAngleRangeMap().forEach((valueRange, integer) -> {
-                var segment = ValueAngleRanges.getInstance().findValueByAngle(valueRange.maxValue()-0.1d);
-                double estimatedX = center.x + 250 * Math.cos(Math.toRadians(valueRange.maxValue()-(18*0.33)));
-                double estimatedY = center.y + 250 * Math.sin(Math.toRadians(valueRange.maxValue()-(18*0.33)));
-                Point point = new Point(estimatedX, estimatedY);
-                Imgproc.putText(segments, String.valueOf(segment), point, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, lineColor, 2);
-            });
-
-            //        System.out.printf("valueAngleRanges: %s\n", valueAngleRanges.getValueAngleRangeMap().keySet().size());
-            //        debugShowImage(considerableLines, "considerable lines");
-            return valueAngleRanges;
+            return result;
         } catch (Exception e) {
             throw new LeidenheitException(
                     MessageFormat.format("Error while determining segments ({0})", e.getMessage()), e);
         }
+    }
+
+    public static void drawSegment(final Mat mat, final Point dartboardCenter, final SegmentData segment) {
+        var segmentLinePointX = dartboardCenter.x + 300 * Math.cos((segment.getUpperBoundaryAngle() * (Math.PI / 180)));
+        var segmentLinePointY = dartboardCenter.y + 300 * Math.sin((segment.getUpperBoundaryAngle() * (Math.PI / 180)));
+        Imgproc.line(mat, dartboardCenter, new Point(segmentLinePointX, segmentLinePointY), new Scalar(0, 0, 255), 1);
+        var segmentLinePointXL = dartboardCenter.x + 300 * Math.cos((segment.getLowerBoundaryAngle() * (Math.PI / 180)));
+        var segmentLinePointYL = dartboardCenter.y + 300 * Math.sin((segment.getLowerBoundaryAngle() * (Math.PI / 180)));
+        Imgproc.line(mat, dartboardCenter, new Point(segmentLinePointXL, segmentLinePointYL), new Scalar(255, 0, 0), 1);
+
+        double estimatedX = dartboardCenter.x + 250 * Math.cos(Math.toRadians(segment.getUpperBoundaryAngle()-(18*0.33)));
+        double estimatedY = dartboardCenter.y + 250 * Math.sin(Math.toRadians(segment.getUpperBoundaryAngle()-(18*0.33)));
+        Point point = new Point(estimatedX, estimatedY);
+        Imgproc.putText(mat, String.valueOf(segment.getSegment()), point, Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(255, 255, 0), 2);
     }
 
     /**
@@ -550,9 +553,8 @@ public class Detection {
      * @return Segment value
      */
     public static Pair<Integer, Mat> evaluatePoint(
-            final ValueAngleRanges valueAngleRanges,
-            final double angle,
-            final Point point,
+            final Point dartboardCenter,
+            final Point hitPoint,
             final Mat maskDartboard,
             final Mat maskInnerBull,
             final Mat maskOuterBull,
@@ -560,41 +562,58 @@ public class Detection {
             final Mat maskDouble,
             final Mat maskSingle
     ) throws LeidenheitException {
-        boolean touchesDartboard = pointIntersectsMask(point, maskDartboard);
-        boolean touchesInnerBull = pointIntersectsMask(point, maskInnerBull);
-        boolean touchesOuterBull = pointIntersectsMask(point, maskOuterBull);
-        boolean touchesTriple = pointIntersectsMask(point, maskTriple);
-        boolean touchesDouble = pointIntersectsMask(point, maskDouble);
-        boolean touchesSingle = pointIntersectsMask(point, maskSingle);
+        boolean touchesDartboard = pointIntersectsMask(hitPoint, maskDartboard);
+        boolean touchesInnerBull = pointIntersectsMask(hitPoint, maskInnerBull);
+        boolean touchesOuterBull = pointIntersectsMask(hitPoint, maskOuterBull);
+        boolean touchesTriple = pointIntersectsMask(hitPoint, maskTriple);
+        boolean touchesDouble = pointIntersectsMask(hitPoint, maskDouble);
+        boolean touchesSingle = pointIntersectsMask(hitPoint, maskSingle);
         if (!touchesDartboard) {
-            System.out.printf("Hitpoint%s -> segment Out\n", point);
+            System.out.printf("Hitpoint%s -> segment Out\n", hitPoint);
             return new Pair<>(0, maskDartboard);
         } else if (touchesInnerBull) {
-            System.out.printf("Hitpoint%s -> segment Bullseye\n", point);
+            System.out.printf("Hitpoint%s -> segment Bullseye\n", hitPoint);
             return new Pair<>(50, maskInnerBull);
         } else if (touchesOuterBull) {
-            System.out.printf("Hitpoint %s -> segment Bull\n", point);
+            System.out.printf("Hitpoint %s -> segment Bull\n", hitPoint);
             return new Pair<>(25, maskOuterBull);
         } else {
             try {
-                final var segmentHit = valueAngleRanges.findValueByAngle(angle);
+                final var segmentHit = estimateSegmentByPoint(dartboardCenter, hitPoint);
                 if (touchesDouble) {
-                    System.out.printf("Hitpoint %s -> segment D%d\n", point, segmentHit);
-                    return new Pair<>(segmentHit * 2, maskDouble);
+                    System.out.printf("Hitpoint %s -> segment D%d\n", hitPoint, segmentHit.getSegment().getValue());
+                    return new Pair<>(segmentHit.getSegment().getValue() * 2, maskDouble);
                 } else if (touchesTriple) {
-                    System.out.printf("Hitpoint %s -> segment T%d\n", point, segmentHit);
-                    return new Pair<>(segmentHit * 3, maskTriple);
+                    System.out.printf("Hitpoint %s -> segment T%d\n", hitPoint, segmentHit.getSegment().getValue());
+                    return new Pair<>(segmentHit.getSegment().getValue() * 3, maskTriple);
                 } else if (touchesSingle) {
-                    System.out.printf("Hitpoint %s -> segment %d\n", point, segmentHit);
-                    return new Pair<>(segmentHit, maskSingle);
+                    System.out.printf("Hitpoint %s -> segment %d\n", hitPoint, segmentHit.getSegment().getValue());
+                    return new Pair<>(segmentHit.getSegment().getValue(), maskSingle);
                 } else {
-                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Single\n", point);
-                    return new Pair<>(segmentHit, maskSingle);
+                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Single\n", hitPoint);
+                    return new Pair<>(segmentHit.getSegment().getValue(), maskSingle);
                 }
             } catch (RuntimeException e) {
                 throw new LeidenheitException("Unexpected error", e);
             }
         }
+    }
+
+    public static SegmentData estimateSegmentByPoint(final Point dartboardCenter, final Point point) {
+        double angle = Detection.calculateAngle(dartboardCenter, point);
+        var result = MaskSingleton.getInstance().segmentDataList.stream()
+                .filter(s -> {
+                    var angleToUse = (angle + 360) % 360;
+                    var min = (s.getLowerBoundaryAngle() + 360) % 360;
+                    var max = (s.getUpperBoundaryAngle() + 360) % 360;
+
+                    return min <= max ?
+                            angleToUse >= min && angleToUse <= max
+                            : angleToUse >= min || angleToUse <= max;
+                })
+                .findFirst()
+                .orElseThrow(() -> new LeidenheitException("Not able to determine segment for arrow tip"));
+        return result;
     }
 
     /**
@@ -643,44 +662,45 @@ public class Detection {
         return angleCenterToPoint;
     }
 
-    private static ValueAngleRanges associateValueAngleRanges(final Point center, final List<Double> segmentLineAngles, final Point clickPointOfSegmentToStartWith) throws LeidenheitException {
-        ValueAngleRanges result = ValueAngleRanges.getInstance();
-        result.getValueAngleRangeMap().clear();
-        List<Integer> segmentIndices = ValueAngleRanges.getInstance().segmentValueIndexes;
+    private static List<SegmentData> associateSegmentBoundaries(
+            final Point dartboardCenter,
+            final List<Double> segmentLineAngles,
+            final Point pointInSegment6) {
+        List<SegmentData> result = new ArrayList<>();
 
-        // find the position of segment 6 (i)
-        var angleOfSegment6 = calculateAngle(center, clickPointOfSegmentToStartWith);
-
-        System.out.printf("associateValueAngleRanges: center=%s, segmentLinesAngles=%s, angleOfSegment=%.2f%n", center, segmentLineAngles.size(), angleOfSegment6);
-
+        // sort the segment lines by their angles
         var sorted = segmentLineAngles.stream()
                 .sorted(Comparator.comparingDouble(Double::doubleValue)).toList();
 
+        // find the position of segment 6 (i)
+        var angleOfSegment6 = calculateAngle(dartboardCenter, pointInSegment6);
+        System.out.printf("associateSegmentBoundaries: center=%s, segmentLinesAngles=%s, angleOfSegment=%.2f%n",
+                dartboardCenter, segmentLineAngles.size(), angleOfSegment6);
+        // determine the upper boundary of the segment 6
         var lineUpperBoundary = sorted.stream()
-                .filter(lineAngle ->  lineAngle >= angleOfSegment6 || (360d-angleOfSegment6) <= 18)
+                .filter(lineAngle ->  (lineAngle >= angleOfSegment6) || (360d - angleOfSegment6) <= 18)
                 .findFirst()
                 .orElseThrow();
+        // determine the lower boundary of segment 6 by incrementing upper boundary index by 1
         var lastLineIndex = segmentLineAngles.indexOf(lineUpperBoundary);
         var lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
         System.out.printf("determine clicked segment 6: lastLineIndex=%s low=%.2f, high=%.2f%n", lastLineIndex, lineLowerBoundary, lineUpperBoundary);
-        // add segment 6
-        result.putValueForAngleRange(
-                0,
-                lineLowerBoundary,
-                lineUpperBoundary);
+        // add segment 6 to result
+        result.add(new SegmentData(Segment.S6, lineLowerBoundary, lineUpperBoundary));
 
         // iterate other indices
-        for (int i = 1; i < segmentIndices.size(); i++) {
+        var otherSegments = Arrays.stream(Segment.values())
+                .filter(segment -> segment.getValue() != 6)
+                .toList();
+        for (Segment segment: otherSegments) {
             lineUpperBoundary = sorted.get((lastLineIndex + 1) % sorted.size());
             lastLineIndex = sorted.indexOf(lineUpperBoundary);
             lineLowerBoundary = sorted.get((lastLineIndex - 1 + sorted.size()) % sorted.size()); // cyclic iteration
-            System.out.printf("auto determine segment: segmentIndex=%s, segment=%s, lastLineIndex=%s, low=%.2f, high=%.2f%n", i, segmentIndices.get(i), lastLineIndex, lineLowerBoundary, lineUpperBoundary);
+            System.out.printf("auto determine segment: segment=%s, lastLineIndex=%s, low=%.2f, high=%.2f%n", segment.getValue(), lastLineIndex, lineLowerBoundary, lineUpperBoundary);
             // add segment
-            result.putValueForAngleRange(
-                    i,
-                    lineLowerBoundary,
-                    lineUpperBoundary);
+            result.add(new SegmentData(segment, lineLowerBoundary, lineUpperBoundary));
         }
+
         return result;
     }
 
@@ -872,45 +892,46 @@ public class Detection {
         Point arrowTip = findFurthestPoint(contourPoints, center);
 
         Point dartboardCenter = Detection.findCircleCenter(null, MaskSingleton.getInstance().innerBullMask);
-        int segmentValueOfArrowMassCenter = DartSingleton.estimateSegmentByPoint(dartboardCenter, center);
+        SegmentData segmentDataOfArrowMassCenter = estimateSegmentByPoint(dartboardCenter, center);
         double euclideanDistance = calculateEuclideanDistance(center, arrowTip);
         double arrowAngle = calculateAngle(center, arrowTip);
 
         // determine if the arrow is covered and an arrow tip estimation should take place here
-        if (shouldExtendArrowTip(segmentValueOfArrowMassCenter, euclideanDistance, arrowAngle)) {
-            Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center, arrowAngle, euclideanDistance);
+        if (shouldExtendArrowTip(segmentDataOfArrowMassCenter.getSegment(), euclideanDistance, arrowAngle, DartSingleton.getInstance().estimationThresholdPercentage)) {
+            // TODO Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center, arrowAngle, euclideanDistance);
+            Point estimatedTip = estimateCoveredArrowTipForSegment(segmentDataOfArrowMassCenter.getSegment(), center);
 
 //             TODO debugging
-            Mat line = frame.clone();
-            Imgproc.circle(line, estimatedTip, 3, new Scalar(0, 255, 0), -1);
-            Imgproc.putText(line, "estimated", estimatedTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-            Imgproc.circle(line, center, 3, new Scalar(255, 0, 0), -1);
-            Imgproc.putText(line, "center", center, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-            Imgproc.circle(line, arrowTip, 3, new Scalar(0, 0, 255), -1);
-            Imgproc.putText(line, "tip", arrowTip, Imgproc.FONT_HERSHEY_SIMPLEX, .75d, new Scalar(0), 2, Imgproc.LINE_AA);
-            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
-             debugShowImage(line, "");
-            line.release();
+//            Mat line = frame.clone();
+//            Imgproc.circle(line, estimatedTip, 3, new Scalar(0, 255, 0), -1);
+//            Imgproc.putText(line, "estimated", estimatedTip, Imgproc.FONT_HERSHEY_SIMPLEX, .5d, new Scalar(0), 1, Imgproc.LINE_AA);
+//            Imgproc.circle(line, center, 3, new Scalar(255, 0, 0), -1);
+//            Imgproc.putText(line, "center", center, Imgproc.FONT_HERSHEY_SIMPLEX, .5d, new Scalar(0), 1, Imgproc.LINE_AA);
+//            Imgproc.circle(line, arrowTip, 3, new Scalar(0, 0, 255), -1);
+//            Imgproc.putText(line, "tip", arrowTip, Imgproc.FONT_HERSHEY_SIMPLEX, .5d, new Scalar(0), 1, Imgproc.LINE_AA);
+//            Imgproc.line(line, center, estimatedTip, new Scalar(0, 255, 255), 2, Imgproc.LINE_AA);
+//            debugShowImage(line, "");
+//            line.release();
 
             // override
             arrowTip = estimatedTip;
         } else {
-            int segmentValueOfArrowTip = DartSingleton.estimateSegmentByPoint(dartboardCenter, arrowTip);
+            SegmentData segmentofArrowTip = estimateSegmentByPoint(dartboardCenter, center);
             // handling for Euclidean distance
-            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfPresent(segmentValueOfArrowTip, (segmentValue, distances) -> {
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfPresent(segmentofArrowTip.getSegment().getValue(), (segmentValue, distances) -> {
                 distances.add(euclideanDistance);
                 return distances;
             });
-            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfAbsent(segmentValueOfArrowTip, segmentValue -> {
+            DartSingleton.getInstance().euclideanDistancesBySegment.computeIfAbsent(segmentofArrowTip.getSegment().getValue(), segmentValue -> {
                 return new ArrayList<>(List.of(euclideanDistance));
             });
 
             // handling for angle
-            DartSingleton.getInstance().arrowAnglesBySegment.computeIfPresent(segmentValueOfArrowTip, (segmentValue, angles) -> {
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfPresent(segmentofArrowTip.getSegment().getValue(), (segmentValue, angles) -> {
                 angles.add(arrowAngle);
                 return angles;
             });
-            DartSingleton.getInstance().arrowAnglesBySegment.computeIfAbsent(segmentValueOfArrowTip, segmentValue -> {
+            DartSingleton.getInstance().arrowAnglesBySegment.computeIfAbsent(segmentofArrowTip.getSegment().getValue(), segmentValue -> {
                 return new ArrayList<>(List.of(arrowAngle));
             });
         }
@@ -946,66 +967,39 @@ public class Detection {
      * @param euclideanDistance
      * @return
      */
-    private static boolean shouldExtendArrowTip(final int segmentValue, final double euclideanDistance, final double angle) {
-        Segment segment = Arrays.stream(Segment.values())
-                .filter(s -> s.getValue() == segmentValue)
-                .findFirst()
-                .orElseThrow(() -> new LeidenheitException(format("segment not found for value %s", segmentValue)));
+    private static boolean shouldExtendArrowTip(final Segment segment, final double euclideanDistance, final double angle, final double thresholdInPercentage) {
+        // estimation
+        List<Double> meanEuclideanDistances = new ArrayList<>();
+        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
+        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
+        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
+        if (euclideanDistancesCurrent != null) {
+            meanEuclideanDistances.add(calculateMean(euclideanDistancesCurrent));
+        }
+        if (euclideanDistancesPrevious != null) {
+            meanEuclideanDistances.add(calculateMean(euclideanDistancesPrevious));
+        }
+        if (euclideanDistancesNext != null) {
+            meanEuclideanDistances.add(calculateMean(euclideanDistancesNext));
+        }
 
-//        List<Double> euclideanDistances = new ArrayList<>();
-//        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
-//        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
-//        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
-//        if (euclideanDistancesCurrent != null) {
-//            euclideanDistances.addAll(euclideanDistancesCurrent);
-//        }
-//        if (euclideanDistancesPrevious != null) {
-//            euclideanDistances.addAll(euclideanDistancesPrevious);
-//        }
-//        if (euclideanDistancesNext != null) {
-//            euclideanDistances.addAll(euclideanDistancesNext);
-//        }
-//
-//        List<Double> angles = new ArrayList<>();
-//        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
-//        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
-//        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
-//        if (anglesCurrent != null) {
-//            angles.addAll(anglesCurrent);
-//        }
-//        if (anglesPrevious != null) {
-//            angles.addAll(anglesPrevious);
-//        }
-//        if (anglesNext != null) {
-//            angles.addAll(anglesNext);
-//        }
-//
-//        if (euclideanDistances.isEmpty() || angles.isEmpty()) {
-//            return false;
-//        }
-//        double medianEuclid = calcMedian(euclideanDistances);
-//        double mediaAngle = calcMedian(angles);
-//        boolean euclidBelowThreshold = (euclideanDistance < medianEuclid)
-//                && ((((Math.abs(euclideanDistance - medianEuclid)) / medianEuclid) * 100) >= 20.0d);
-//// TODO: most likely not relevant in this context
-////        boolean angleBelowThreshold = (angle < mediaAngle)
-////                && ((((Math.abs(angle - mediaAngle)) / mediaAngle) * 100) >= 66.6d);
-////        boolean result = euclidBelowThreshold || angleBelowThreshold;
+        double meanEuclideanDistance = 1;
+        if (meanEuclideanDistances.isEmpty()) {
+            var distances = new ArrayList<Double>();
+            DartSingleton.getInstance().euclideanDistancesBySegment.forEach((key, value) -> distances.addAll(value));
+            meanEuclideanDistance = calculateMean(distances);
+        } else {
+            for (double distance : meanEuclideanDistances) {
+                meanEuclideanDistance += distance;
+            }
+            meanEuclideanDistance = meanEuclideanDistance / meanEuclideanDistances.size();
+        }
 
-
-        var distances = new ArrayList<Double>();
-        DartSingleton.getInstance().euclideanDistancesBySegment.forEach((key, value) -> distances.addAll(value));
-        var meanEuclid = DartSingleton.calculateMean(distances);
-
-        boolean euclidBelowThreshold = (euclideanDistance < meanEuclid)
-                && ((((Math.abs(euclideanDistance - meanEuclid)) / meanEuclid) * 100) >= 20d); // FIXME: must be configurable
-
-
-
-        boolean result = euclidBelowThreshold;
-        System.out.printf("Arrow Tip must be estimated (%s): segment=%s, angle=%.2f, euclideanDist=%.2f (mean=%.2f)%n",
-                result, segmentValue, angle, euclideanDistance, meanEuclid);
-        return result;
+        boolean euclidBelowThreshold = (euclideanDistance < meanEuclideanDistance)
+                && ((((Math.abs(euclideanDistance - meanEuclideanDistance)) / meanEuclideanDistance) * 100) >= thresholdInPercentage);
+        System.out.printf("Arrow Tip must be estimated (%s [threshold=%.2f]): segment=%s, angle=%.2f, euclideanDist=%.2f (mean=%.2f)%n",
+                euclidBelowThreshold, thresholdInPercentage, segment.getValue(), angle, euclideanDistance, meanEuclideanDistance);
+        return euclidBelowThreshold;
     }
 
     /**
@@ -1127,5 +1121,110 @@ public class Detection {
             return (x + y) / 2;
         }
         return workingCopy.get(halfLen);
+    }
+
+    private static double calculateMean(final List<Double> data) {
+        double mean = 0d;
+        for (double num : data) {
+            mean += num;
+        }
+        return mean / data.size();
+    }
+    private static double calculateVariance(final List<Double> data, double mean) {
+        double variance = 0d;
+        for (double num : data) {
+            variance += Math.pow(num - mean, 2);
+        }
+        return variance / data.size();
+    }
+
+    private static double bayesianEstimate(double priorMean, double priorVariance, double measurement, double measurementVariance) {
+        double posteriorVariance = 1 / ((1 / priorVariance) + (1 / measurementVariance));
+        double posteriorMean = posteriorVariance * ((priorMean / priorVariance) + (measurement / measurementVariance));
+        return posteriorMean;
+    }
+
+    public static Point estimateCoveredArrowTipForSegment(final Segment segment, final Point arrowMassCenter) {
+        // Find medians of neighbor segments. Use that medians to calc a mean for estimation. When no neighbor medians
+        // available, use the mean of all recorded angles.
+        double angleToUseForEstimation;
+        List<Double> medianAngles = new ArrayList<>();
+        var anglesCurrent = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getValue());
+        var anglesPrevious = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getPrevious().getValue());
+        var anglesNext = DartSingleton.getInstance().arrowAnglesBySegment.get(segment.getNext().getValue());
+        if (anglesCurrent != null) {
+            medianAngles.add(Detection.calcMedian(anglesCurrent));
+        }
+        if (anglesPrevious != null) {
+            medianAngles.add(Detection.calcMedian(anglesPrevious));
+        }
+        if (anglesNext != null) {
+            medianAngles.add(Detection.calcMedian(anglesNext));
+        }
+        if (medianAngles.isEmpty()) {
+            var allAnglesRecorded = new ArrayList<Double>();
+            DartSingleton.getInstance().arrowAnglesBySegment.forEach((key, value) ->
+                    allAnglesRecorded.addAll(value));
+            angleToUseForEstimation = calculateMean(allAnglesRecorded);
+        } else {
+            angleToUseForEstimation = calculateMean(medianAngles);
+        }
+
+        // Find medians of neighbor segments. Use that medians to calc a mean for estimation. When no neighbor medians
+        // available, use the mean of all recorded Euclidean distances.
+        double euclideanDistanceToUseForEstimation;
+        List<Double> medianEuclideanDistances = new ArrayList<>();
+        var euclideanDistancesCurrent = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getValue());
+        var euclideanDistancesPrevious = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getPrevious().getValue());
+        var euclideanDistancesNext = DartSingleton.getInstance().euclideanDistancesBySegment.get(segment.getNext().getValue());
+        if (euclideanDistancesCurrent != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesCurrent));
+        }
+        if (euclideanDistancesPrevious != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesPrevious));
+        }
+        if (euclideanDistancesNext != null) {
+            medianEuclideanDistances.add(Detection.calcMedian(euclideanDistancesNext));
+        }
+        if (medianEuclideanDistances.isEmpty()) {
+            var allEuclideanDistancesRecorded = new ArrayList<Double>();
+            DartSingleton.getInstance().euclideanDistancesBySegment.forEach((key, value) ->
+                    allEuclideanDistancesRecorded.addAll(value));
+            euclideanDistanceToUseForEstimation = calculateMean(allEuclideanDistancesRecorded);
+        } else {
+            euclideanDistanceToUseForEstimation = calculateMean(medianEuclideanDistances);
+        }
+
+        // Apply the estimated Euclidean distance and angle to the mass center of the dart contour
+        double estimatedX = arrowMassCenter.x + euclideanDistanceToUseForEstimation * Math.cos(Math.toRadians(angleToUseForEstimation));
+        double estimatedY = arrowMassCenter.y + euclideanDistanceToUseForEstimation * Math.sin(Math.toRadians(angleToUseForEstimation));
+
+        // experimental:
+        var dists = new ArrayList<Double>();
+        if (euclideanDistancesCurrent != null) {
+            dists.addAll(euclideanDistancesCurrent);
+        }
+        if (euclideanDistancesNext != null) {
+            dists.addAll(euclideanDistancesNext);
+        }
+        if (euclideanDistancesPrevious != null) {
+            dists.addAll(euclideanDistancesPrevious);
+        }
+        if (!dists.isEmpty()) {
+            var distanceMedian = Detection.calcMedian(dists);
+            var distanceVariance = calculateVariance(dists, distanceMedian);
+            // read covered data
+            var coveredArrowDistance = Detection.calculateEuclideanDistance(arrowMassCenter, new Point(estimatedX, estimatedY));
+            var coveredArrowDistanceVariance = 1d;
+            // estimation
+            var estimatedDistance = bayesianEstimate(distanceMedian, distanceVariance, coveredArrowDistance, coveredArrowDistanceVariance);
+            if (!Double.isNaN(estimatedDistance)) {
+                estimatedX = arrowMassCenter.x + (estimatedDistance) * Math.cos(Math.toRadians(angleToUseForEstimation));
+                estimatedY = arrowMassCenter.y + (estimatedDistance) * Math.sin(Math.toRadians(angleToUseForEstimation));
+            }
+        }
+
+        // override
+        return new Point(estimatedX, estimatedY);
     }
 }

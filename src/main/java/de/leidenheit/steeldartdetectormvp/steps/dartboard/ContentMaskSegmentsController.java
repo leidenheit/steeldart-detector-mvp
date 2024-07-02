@@ -105,7 +105,7 @@ public class ContentMaskSegmentsController extends ContentController {
             Mat bilateral = new Mat();
             Imgproc.bilateralFilter(MaskSingleton.getInstance().baseImageBGR, bilateral, 5, 50, 50);
 
-            MaskSingleton.getInstance().valueAngleRanges = Detection.determineDartboardSegments(
+            MaskSingleton.getInstance().segmentDataList = Detection.determineDartboardSegments(
                     pointCenter,
                     bilateral,
                     MaskSingleton.getInstance().segments,
@@ -113,7 +113,6 @@ public class ContentMaskSegmentsController extends ContentController {
                     MaskSingleton.getInstance().doubleMask,
                     MaskSingleton.getInstance().tripleMask,
                     MaskSingleton.getInstance().multiRingsMask,
-                    (int) lineCandidateCannyGaussian,
                     (int) lineCandidateDilateKernelSize,
                     lineGroupTolerance,
                     (int) cannyThres1,

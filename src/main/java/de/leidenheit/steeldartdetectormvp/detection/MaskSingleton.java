@@ -1,8 +1,7 @@
 package de.leidenheit.steeldartdetectormvp.detection;
 
 import de.leidenheit.steeldartdetectormvp.FxUtil;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.Point;
@@ -19,9 +18,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-// @Data
-@Getter
-@Setter
+@Data
 public class MaskSingleton implements Serializable {
 
     @Serial
@@ -82,7 +79,7 @@ public class MaskSingleton implements Serializable {
 
     // TODO consider serializing center point too...
 
-    public ValueAngleRanges valueAngleRanges = ValueAngleRanges.getInstance();
+    public List<SegmentData> segmentDataList = new ArrayList<>();
 
     // ignored by serialization
     private transient final List<String> debugList = new ArrayList<>();
@@ -158,7 +155,7 @@ public class MaskSingleton implements Serializable {
                 writeMat(oos, missMask);
 
                 // determined segment angles
-                oos.writeObject(valueAngleRanges);
+                oos.writeObject(segmentDataList);
 
                 return true;
             }
@@ -215,7 +212,7 @@ public class MaskSingleton implements Serializable {
             missMask = readMat(ois);
 
             // determined segment angles
-            valueAngleRanges = (ValueAngleRanges) ois.readObject();
+            segmentDataList = (List<SegmentData>) ois.readObject();
 
             return true;
         } catch (IOException | ClassNotFoundException e) {
