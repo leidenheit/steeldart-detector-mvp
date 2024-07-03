@@ -899,7 +899,7 @@ public class Detection {
         // determine if the arrow is covered and an arrow tip estimation should take place here
         if (shouldExtendArrowTip(segmentDataOfArrowMassCenter.getSegment(), euclideanDistance, arrowAngle, DartSingleton.getInstance().estimationThresholdPercentage)) {
             // TODO Point estimatedTip = DartSingleton.estimateCoveredArrowTipForSegment(segmentValueOfArrowMassCenter, center, arrowAngle, euclideanDistance);
-            Point estimatedTip = estimateCoveredArrowTipForSegment(segmentDataOfArrowMassCenter.getSegment(), center);
+            Point estimatedTip = estimateCoveredArrowTipForSegment(segmentDataOfArrowMassCenter.getSegment(), center, arrowAngle);
 
 //             TODO debugging
 //            Mat line = frame.clone();
@@ -1144,7 +1144,7 @@ public class Detection {
         return posteriorMean;
     }
 
-    public static Point estimateCoveredArrowTipForSegment(final Segment segment, final Point arrowMassCenter) {
+    public static Point estimateCoveredArrowTipForSegment(final Segment segment, final Point arrowMassCenter, final double arrowAngle) {
         // Find medians of neighbor segments. Use that medians to calc a mean for estimation. When no neighbor medians
         // available, use the mean of all recorded angles.
         double angleToUseForEstimation;
@@ -1168,6 +1168,11 @@ public class Detection {
             angleToUseForEstimation = calculateMean(allAnglesRecorded);
         } else {
             angleToUseForEstimation = calculateMean(medianAngles);
+        }
+        // only use median angles when direction differs by at least 90°
+        boolean arrowAngleDeviationThreshold = Math.abs(angleToUseForEstimation - arrowAngle) < 90d;
+        if (arrowAngleDeviationThreshold) {
+            angleToUseForEstimation = arrowAngle;
         }
 
         // Find medians of neighbor segments. Use that medians to calc a mean for estimation. When no neighbor medians
