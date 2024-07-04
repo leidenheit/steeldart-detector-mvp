@@ -40,15 +40,15 @@ public class DartSingleton implements Serializable {
     // scale factor configuration
     public double scaleFactor = 1d;
 
-    public int vidGaussian = 5;
+    public int vidGaussian = 3;
     public int vidCloseIterations = 1;
     public int vidErodeIterations = 1;
     public int vidDilateIterations = 1;
-    public int vidSubtractorThreshold = 75;
+    public int vidSubtractorThreshold = 80;
     public int vidMinContourArea = 100;
     public int vidMaxMergedContourArea = 15_000*1000; // TODO AVa fix this
     public double vidAspectRatioLow = 0;
-    public double vidAspectRatioHigh = 3;
+    public double vidAspectRatioHigh = 5;
     public double vidUnpluggingThreshold = 15_000;
     public double estimationThresholdPercentage = 20.0d;
 

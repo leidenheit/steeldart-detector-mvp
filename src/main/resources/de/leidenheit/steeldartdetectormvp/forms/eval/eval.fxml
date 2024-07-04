@@ -155,7 +155,7 @@
                                                         <Insets />
                                                     </HBox.margin>
                                                 </Label>
-                                                <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="13.0" min="1.0" minorTickCount="2" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="5.0">
+                                                <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="13.0" min="1.0" minorTickCount="2" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="3.0">
                                                     <HBox.margin>
                                                         <Insets />
                                                     </HBox.margin>
@@ -169,7 +169,7 @@
                                                         <Insets />
                                                     </HBox.margin>
                                                 </Label>
-                                                <Slider fx:id="sliderSubtractorThreshold" blockIncrement="5.0" majorTickUnit="10.0" max="125.0" min="25.0" minorTickCount="5" prefHeight="33.0" prefWidth="317.0" showTickLabels="true" snapToTicks="true" value="75.0">
+                                                <Slider fx:id="sliderSubtractorThreshold" blockIncrement="5.0" majorTickUnit="10.0" max="125.0" min="25.0" minorTickCount="5" prefHeight="33.0" prefWidth="317.0" showTickLabels="true" snapToTicks="true" value="80.0">
                                                     <HBox.margin>
                                                         <Insets />
                                                     </HBox.margin>
@@ -223,7 +223,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderAspectRatioLow" blockIncrement="0.1" majorTickUnit="1.0" max="5.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="0.5">
+                                            <Slider fx:id="sliderAspectRatioLow" blockIncrement="0.1" majorTickUnit="1.0" max="10.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -237,7 +237,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderAspectRatioHigh" blockIncrement="0.1" majorTickUnit="1.0" max="5.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="2.5">
+                                            <Slider fx:id="sliderAspectRatioHigh" blockIncrement="0.1" majorTickUnit="1.0" max="10.0" minorTickCount="1" prefWidth="350.0" showTickLabels="true" snapToTicks="true" value="10">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>

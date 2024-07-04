@@ -269,7 +269,7 @@ public class EvaluationController extends ContentWithCameraController {
                         arrowTips.add(scoreAndDartTipBoundingBoxPair.getValue()[0]);
                         dartThrows++;
                     } else {
-                        log("Skipping due to aspect ratio threshold");
+                        log("WARN: Skipping due to aspect ratio threshold: {0}", String.valueOf(aspectRatio));
                         maskToEval.release();
                         return;
                     }
