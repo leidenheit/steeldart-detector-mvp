@@ -19,7 +19,7 @@ public enum Page {
     MASK_MISS(10, "11/14 Miss Mask", "Determined miss area of a dartboard.", "mask-miss.fxml"),
     MASK_SEGMENT_ADJUSTMENT(11, "12/14 Segment Orientation", "Set position of segment 6 by clicking in the dartboard.", "mask-segment-adjustment.fxml"),
     MASK_SEGMENTS(12, "13/14 Segments Mask", "Detect segments of a dartboard.", "mask-segments.fxml"),
-    MASK_SEGMENT_FINE_ADJUSTMENT(14, "14/14 Segment Fine Adjustment", "Adjust the lower and upper boundary for a segment", "mask-segment-fine-adjustment.fxml"),
+    MASK_SEGMENT_FINE_ADJUSTMENT(13, "14/14 Segment Fine Adjustment", "Adjust the lower and upper boundary for a segment", "mask-segment-fine-adjustment.fxml"),
     DARTBOARD_SUMMARY(14, "Summary", "Save and export the configuration if satisfying.", "summary.fxml"),
     DART_DARTS(15, "01/02 Darts Detection Preparation", "Put once at a time a single arrow in the board and make a snapshot.", "darts.fxml"),
     DART_TIP(16, "02/02 Dart Tips", "Determine arrow tips.", "dart-tips.fxml"),
