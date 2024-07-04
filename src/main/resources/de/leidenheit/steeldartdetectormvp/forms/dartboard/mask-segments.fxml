@@ -21,7 +21,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderLineGroupTolerance" blockIncrement="1.0" max="10.0" minorTickCount="5" prefWidth="500.0" showTickLabels="true" showTickMarks="true" value="5.0">
+                                            <Slider fx:id="sliderLineGroupTolerance" blockIncrement="1.0" max="10.0" minorTickCount="1" majorTickUnit="1" prefWidth="500.0" showTickLabels="true" showTickMarks="true" value="8.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -45,7 +45,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderLineCandidateDilateKernelSize" blockIncrement="1.0" majorTickUnit="1.0" max="16.0" min="1.0" minorTickCount="1" prefWidth="400.0" showTickLabels="true" snapToTicks="true" value="4.0">
+                                            <Slider fx:id="sliderLineCandidateDilateKernelSize" blockIncrement="1.0" majorTickUnit="1.0" max="16.0" min="1.0" minorTickCount="1" prefWidth="400.0" showTickLabels="true" snapToTicks="true" value="1.0">
 
                                                 <HBox.margin>
                                                     <Insets />
@@ -58,7 +58,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderCannyThres1" blockIncrement="20.0" majorTickUnit="100.0" max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="400.0">
+                                            <Slider fx:id="sliderCannyThres1" blockIncrement="20.0" majorTickUnit="100.0" max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="50.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -74,7 +74,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderCannyThres2" blockIncrement="20.0" majorTickUnit="100.0" max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="420.0">
+                                            <Slider fx:id="sliderCannyThres2" blockIncrement="20.0" majorTickUnit="100.0" max="600.0" min="20.0" minorTickCount="20" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="150.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -86,7 +86,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderHoughThres" blockIncrement="10.0" majorTickUnit="10.0" max="300.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="210.0">
+                                            <Slider fx:id="sliderHoughThres" blockIncrement="10.0" majorTickUnit="10.0" max="300.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="100.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -98,7 +98,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderHoughMinLineLength" blockIncrement="10.0" majorTickUnit="10.0" max="500.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="160.0">
+                                            <Slider fx:id="sliderHoughMinLineLength" blockIncrement="10.0" majorTickUnit="10.0" max="500.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="10.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -110,7 +110,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderHoughMaxLineGap" blockIncrement="10.0" majorTickUnit="10.0" max="200.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="80.0">
+                                            <Slider fx:id="sliderHoughMaxLineGap" blockIncrement="10.0" majorTickUnit="10.0" max="200.0" min="10.0" minorTickCount="10" prefWidth="450.0" showTickLabels="true" snapToTicks="true" value="200.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>

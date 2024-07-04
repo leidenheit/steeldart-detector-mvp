@@ -33,7 +33,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="21.0" min="1.0" minorTickCount="2" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="1.0">
+                                            <Slider fx:id="sliderGaussian" blockIncrement="2.0" majorTickUnit="2.0" max="21.0" min="1.0" minorTickCount="2" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="5.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>
@@ -57,7 +57,7 @@
                                                     <Insets />
                                                 </HBox.margin>
                                             </Label>
-                                            <Slider fx:id="sliderDilateIterations" blockIncrement="1.0" majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="2.0">
+                                            <Slider fx:id="sliderDilateIterations" blockIncrement="1.0" majorTickUnit="1.0" max="20.0" min="1.0" minorTickCount="1" prefWidth="500.0" showTickLabels="true" snapToTicks="true" value="1.0">
                                                 <HBox.margin>
                                                     <Insets />
                                                 </HBox.margin>

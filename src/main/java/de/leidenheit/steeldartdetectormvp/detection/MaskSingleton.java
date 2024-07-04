@@ -38,27 +38,27 @@ public class MaskSingleton implements Serializable {
     public double scaleFactor = 1d;
 
     public int greenMaskThresholdValue = 16;
-    public int greenMaskGaussianValue = 1;
+    public int greenMaskGaussianValue = 5;
     public int greenMaskMorphDilateValue = 1;
-    public int greenMaskMorphErodeValue = 2;
+    public int greenMaskMorphErodeValue = 1;
     public int greenMaskMorphCloseValue = 1;
     public transient Mat greenMask = null;
 
     public int redMaskThresholdValue = 50;
     public int redMaskGaussianValue = 5;
     public int redMaskMorphDilateValue = 1;
-    public int redMaskMorphErodeValue = 2;
+    public int redMaskMorphErodeValue = 1;
     public int redMaskMorphCloseValue = 1;
     public transient Mat redMask = null;
 
     public int multipliersMaskMorphDilateValue = 1;
     public transient Mat multipliersMask = null;
 
-    public int multiRingsMaskMorphCloseValue = 3;
+    public int multiRingsMaskMorphCloseValue = 2;
     public transient Mat multiRingsMask = null;
 
-    public int dartboardMaskMorphDilateIterationsValue = 5;
-    public int dartboardMaskMorphErodeIterationsValue = 11;
+    public int dartboardMaskMorphDilateIterationsValue = 1;
+    public int dartboardMaskMorphErodeIterationsValue = 2;
     public transient Mat dartboardMask = null;
 
     public transient Mat singleMask = null;
@@ -70,12 +70,12 @@ public class MaskSingleton implements Serializable {
 
     public int segmentsMaskLineCandidateCannyGaussian = 1;
     public int segmentsMaskLineCandidateDilateKernelSize = 4;
-    public int segmentsMaskLineGroupTolerance = 5;
-    public int segmentsMaskCannyThreshold1 = 400;
-    public int segmentsMaskCannyThreshold2 = 420;
-    public int segmentsMaskHoughThreshold = 210;
-    public int segmentsMaskHoughMinLineLength = 160;
-    public int segmentsMaskHoughMaxLineGap = 80;
+    public int segmentsMaskLineGroupTolerance = 8;
+    public int segmentsMaskCannyThreshold1 = 50;
+    public int segmentsMaskCannyThreshold2 = 150;
+    public int segmentsMaskHoughThreshold = 100;
+    public int segmentsMaskHoughMinLineLength = 10;
+    public int segmentsMaskHoughMaxLineGap = 200;
 
     // TODO consider serializing center point too...
 
