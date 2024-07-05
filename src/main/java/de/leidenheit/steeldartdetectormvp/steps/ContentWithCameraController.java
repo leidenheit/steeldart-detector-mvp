@@ -161,7 +161,7 @@ public abstract class ContentWithCameraController {
                         customHandledFrame.release();
 
                         // Sleep for a short while to prevent high CPU usage
-                        Thread.sleep(100);
+                        Thread.sleep(25);
                     }
                 }
                 log("EOV reached");
