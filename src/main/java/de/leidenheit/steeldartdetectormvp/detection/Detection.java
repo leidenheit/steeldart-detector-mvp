@@ -529,7 +529,11 @@ public class Detection {
         try {
             if (point.inside(new Rect(0, 0, mask.cols(), mask.rows()))) {
                 double[] pixel = mask.get((int) point.y, (int) point.x);
-                return pixel[0] >= 252; // almost white
+                // TODO consider threshold configurable
+                final int THRESHOLD = 200;
+                boolean intersects = pixel[0] > THRESHOLD;
+                System.out.printf("Mask Intersect Check: %s -> threshold=%s, value=%.2f%n", intersects, THRESHOLD, pixel[0]);
+                return pixel[0] >= 200; // almost white
             } else {
                 return false;
             }
@@ -590,7 +594,7 @@ public class Detection {
                     System.out.printf("Hitpoint %s -> segment %d\n", hitPoint, segmentHit.getSegment().getValue());
                     return new Pair<>(segmentHit.getSegment().getValue(), maskSingle);
                 } else {
-                    System.out.printf("Hitpoint %s -> segment not determinable -> fallback: Single\n", hitPoint);
+                    System.out.printf("WARN: Hitpoint %s -> segment not determinable -> fallback: Single\n", hitPoint);
                     return new Pair<>(segmentHit.getSegment().getValue(), maskSingle);
                 }
             } catch (RuntimeException e) {

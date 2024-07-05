@@ -74,6 +74,8 @@ public class CameraSelectionController extends ContentWithCameraController {
             int selIndex = comboBoxCam.getSelectionModel().getSelectedIndex() - 1;
             CamSingleton.getInstance().setSelectedCameraIndex(selIndex);
             CamSingleton.getInstance().setCameraName(Videoio.getBackendName(selIndex));
+
+            initialize();
         });
 
         videoCapture.open(CamSingleton.getInstance().getSelectedCameraIndex(), Videoio.CAP_DSHOW);

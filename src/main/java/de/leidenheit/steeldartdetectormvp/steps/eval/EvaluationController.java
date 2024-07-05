@@ -481,7 +481,7 @@ public class EvaluationController extends ContentWithCameraController {
         subtractor = Video.createBackgroundSubtractorMOG2();
         subtractor.setVarThreshold(DartSingleton.getInstance().vidSubtractorThreshold);
         subtractor.setDetectShadows(false);
-        subtractor.setHistory(frameCount == -1d ? (int) fps : (frameCount == 6 ? 1 : 2));
+        subtractor.setHistory(frameCount <= 0 ? ((int) fps <= 0 ? 30 : (int) fps) : (frameCount == 6 ? 1 : 2));
         return videoCapture;
     }
 
