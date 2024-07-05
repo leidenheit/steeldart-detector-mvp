@@ -6,7 +6,7 @@
 
     <groupId>de.leidenheit</groupId>
     <artifactId>steeldart-detector-mvp</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-alpha</version>
     <name>steeldart-detector-mvp</name>
 
     <properties>
