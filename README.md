@@ -26,6 +26,9 @@ Camera Angle | Camera Distance | Gaussian | Threshold | Erode | Accuracy | Succe
 ## Setup
 `video comming soon`
 
+## Download Alpha
+https://drive.google.com/drive/folders/1q4eLVK3SdFJBQlM-hmY64F3o52IK8G5j?usp=sharing
+
 ## About
 
 This approach is inspired by Jacob D. Delaney`s EE368/CS232 project proposal.
